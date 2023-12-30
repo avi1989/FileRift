@@ -30,6 +30,7 @@ public class DelimitedFileReaderTests
         var fileReader = FileReaderBuilder.BuildDelimitedReader(pathToFile)
             .HasHeaders()
             .WithDelimiter(',')
+            .WithDateFormats("MM/dd/yyyy", "yyyy-MM-dd")
             .WithEscapeCharacter('\"')
             .WithTrimmedData()
             .Build(classMap);
