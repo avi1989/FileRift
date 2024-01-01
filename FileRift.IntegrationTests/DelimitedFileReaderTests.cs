@@ -57,11 +57,11 @@ public class DelimitedFileReaderTests
     {
         var classMap = new ClassMap<Person>();
         classMap
-            .AddColumnMap("FirstName", x => x.FirstName)
-            .AddColumnMap("LastName", x => x.LastName)
-            .AddColumnMap("Age", x => x.Age)
-            .AddColumnMap("IsStudent", x => x.IsStudent)
-            .AddColumnMap("Id", x => x.Id);
+            .Add("FirstName", x => x.FirstName)
+            .Add("LastName", x => x.LastName)
+            .Add("Age", x => x.Age)
+            .Add("IsStudent", x => x.IsStudent)
+            .Add("Id", x => x.Id);
 
         var classMaps = new ClassMaps();
         classMaps.RegisterClassMap(classMap);

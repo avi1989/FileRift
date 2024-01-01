@@ -25,13 +25,22 @@ public class ClassMap<T> : IClassMap
     public IReadOnlyCollection<ColumnMapping> ColumnMappings => _columnMappings;
 
     public Type Type => typeof(T);
-
+    
     public ClassMap<T> AddColumnMap(string columnName, Expression<Func<T, object>> expression)
     {
-        var a = GetPropertyName(expression);
+        var propertyName = GetPropertyName(expression);
         var propertyType = GetPropertyType(expression);
+        return AddColumnMap(columnName, propertyName, propertyType);
+    }
 
-        var columnMapping = new ColumnMapping(columnName, a, propertyType);
+    public ClassMap<T> Add(string columnName, Expression<Func<T, object>> expression)
+    {
+        return this.AddColumnMap(columnName, expression);
+    }
+    
+    public ClassMap<T> AddColumnMap(string columnName, string propertyName, string propertyType)
+    {
+        var columnMapping = new ColumnMapping(columnName, propertyName, propertyType);
         _columnMappings.Add(columnMapping);
         return this;
     }
