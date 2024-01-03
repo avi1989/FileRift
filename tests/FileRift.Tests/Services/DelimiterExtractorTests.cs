@@ -2,7 +2,7 @@
 
 namespace FileRift.Tests.Services;
 
-public class SeparatorExtractorTests
+public class DelimiterExtractorTests
 {
     [Fact]
     public void GetSeparator_ShouldDetectCsv_Correctly()
@@ -14,8 +14,8 @@ public class SeparatorExtractorTests
             "Apple, Banana, Cat, Dog, Elephant",
         ];
 
-        var sut = new SeparatorExtractor();
-        var result = sut.GetSeparator(rows);
+        var sut = new DelimiterExtractor();
+        var result = sut.GetDelimiter(rows);
         Assert.Equal(',', result);
     }
 
@@ -29,8 +29,8 @@ public class SeparatorExtractorTests
             "Apple| Banana| Cat| Dog| Elephant",
         ];
 
-        var sut = new SeparatorExtractor();
-        var result = sut.GetSeparator(rows);
+        var sut = new DelimiterExtractor();
+        var result = sut.GetDelimiter(rows);
         Assert.Equal('|', result);
     }
 
@@ -44,8 +44,8 @@ public class SeparatorExtractorTests
             "Apple\t Banana\t Cat\t Dog\t Elephant",
         ];
 
-        var sut = new SeparatorExtractor();
-        var result = sut.GetSeparator(rows);
+        var sut = new DelimiterExtractor();
+        var result = sut.GetDelimiter(rows);
         Assert.Equal('\t', result);
     }
 
@@ -59,8 +59,8 @@ public class SeparatorExtractorTests
             "Apple Banana Cat Dog Elephant",
         ];
 
-        var sut = new SeparatorExtractor();
-        var result = sut.GetSeparator(rows);
+        var sut = new DelimiterExtractor();
+        var result = sut.GetDelimiter(rows);
         Assert.Equal(' ', result);
     }
 
@@ -77,8 +77,8 @@ public class SeparatorExtractorTests
             $"Apple{separator} Banana{separator} Cat{separator} Dog{separator} Elephant",
         ];
 
-        var sut = new SeparatorExtractor();
-        var result = sut.GetSeparator(rows);
+        var sut = new DelimiterExtractor();
+        var result = sut.GetDelimiter(rows);
         Assert.Equal(separator, result);
     }
 
@@ -92,8 +92,8 @@ public class SeparatorExtractorTests
             "Apple,| Banana,| Cat,| Dog,| Elephant",
         ];
 
-        var sut = new SeparatorExtractor();
-        var result = sut.GetSeparator(rows);
+        var sut = new DelimiterExtractor();
+        var result = sut.GetDelimiter(rows);
         Assert.Null(result);
     }
 
@@ -106,12 +106,44 @@ public class SeparatorExtractorTests
         string[] rows =
         [
             $"\"A{separator}B{separator}\"C{separator}D{separator}E",
-            $"ABC{separator}GHI{separator}JKL",
-            $"Apple{separator} Cat{separator} Dog",
+            $"ABC                          {separator}GHI{separator}JKL",
+            $"Apple                        {separator} Cat{separator} Dog",
         ];
 
-        var sut = new SeparatorExtractor();
-        var result = sut.GetSeparator(rows, '\"');
+        var sut = new DelimiterExtractor();
+        var result = sut.GetDelimiter(rows, '\"');
         Assert.Equal(separator, result);
+    }
+
+    [Theory]
+    [InlineData(',')]
+    [InlineData('|')]
+    [InlineData('^')]
+    [InlineData('!')]
+    [InlineData('#')]
+    public void GetSeparator_ShouldOnlyAllowAllowedSeparators_IfConfigured(char separator)
+    {
+        string[] rows =
+        [
+            $"A{separator}B{separator}C{separator}D{separator}E",
+            $"ABC{separator}DEF{separator}GHI{separator}JKL{separator}MNO",
+            $"Apple{separator} Banana{separator} Cat{separator} Dog{separator} Elephant",
+        ];
+
+        char[] allowedSeparators = [',', '^'];
+
+        var sut = new DelimiterExtractor(allowedSeparators);
+        var result = sut.GetDelimiter(rows, '\"');
+
+        bool isAllowed = allowedSeparators.Contains(separator);
+
+        if (isAllowed)
+        {
+            Assert.Equal(separator, result);
+        }
+        else
+        {
+            Assert.Null(result);
+        }
     }
 }

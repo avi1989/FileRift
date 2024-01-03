@@ -1,8 +1,9 @@
 ﻿using System.Text.RegularExpressions;
+using FileRift.Contracts;
 
 namespace FileRift.Services;
 
-public class EscapeCharacterExtractor
+public class EscapeCharacterExtractor : IEscapeCharacterExtractor
 {
     // Regular expression to match content between quotes
     private static readonly Regex SeparatorPattern = new Regex(@"""([^""]*)""|'([^']*)'");
