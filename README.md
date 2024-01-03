@@ -169,3 +169,6 @@ var results = fileReader.Read().ToList();
 - Perform AutoMapping for properties that match the property name exactly
 - Allow mapping into types that have a constructor with parameters.
 - Add defaults for common file types to make building them easily.
+
+## Known Issues
+- FileRift currently has issues with nullable types like int?. I am working on fixing this.
