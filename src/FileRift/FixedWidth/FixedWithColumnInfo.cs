@@ -1,5 +1,5 @@
 ﻿namespace FileRift.FixedWidth;
 
-public record FixedWidthColumnInfo(int Position, int Length, string Name)
+public record FixedWidthColumnInfo(int Position, int Length, string? Name)
 {
 }

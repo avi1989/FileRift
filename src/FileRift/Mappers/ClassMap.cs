@@ -26,16 +26,16 @@ public class ClassMap<T> : IClassMap
 
     public Type Type => typeof(T);
     
-    public ClassMap<T> AddColumnMap(string columnName, Expression<Func<T, object>> expression)
+    public ClassMap<T> AddColumnMap(string columnName, Expression<Func<T, object?>> expression)
     {
         var propertyName = GetPropertyName(expression);
         var propertyType = GetPropertyType(expression);
         return AddColumnMap(columnName, propertyName, propertyType);
     }
 
-    public ClassMap<T> Add(string columnName, Expression<Func<T, object>> expression)
+    public ClassMap<T> Add(string columnName, Expression<Func<T, object?>> expression)
     {
-        return this.AddColumnMap(columnName, expression);
+        return AddColumnMap(columnName, expression);
     }
     
     public ClassMap<T> AddColumnMap(string columnName, string propertyName, string propertyType)
@@ -45,7 +45,7 @@ public class ClassMap<T> : IClassMap
         return this;
     }
 
-    private string GetPropertyType(Expression<Func<T, object>> expression)
+    private string GetPropertyType(Expression<Func<T, object?>> expression)
     {
         var propertyName = GetPropertyName(expression);
         var propertyInfo = _properties[propertyName];
@@ -54,9 +54,9 @@ public class ClassMap<T> : IClassMap
         return propertyInfo.PropertyType.FullName;
     }
 
-    private string GetPropertyName(Expression<Func<T, object>> expression)
+    private static string GetPropertyName(Expression<Func<T, object?>> expression)
     {
-        MemberExpression memberExpression = null;
+        MemberExpression memberExpression;
         if (expression.Body.NodeType == ExpressionType.Convert)
         {
             var unaryExpression = (UnaryExpression)expression.Body;

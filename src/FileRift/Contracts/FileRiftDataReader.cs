@@ -15,7 +15,7 @@ public abstract class FileRiftDataReader : IDataReader
         RowSplitter = rowSplitter;
         StreamReader = streamReader;
         CurrentRow = new string[1];
-        AllowedDateFormats = allowedDateFormats?.ToArray() ?? new string[] { };
+        AllowedDateFormats = allowedDateFormats?.ToArray() ?? [];
 
         if (hasHeaders)
         {
@@ -27,27 +27,27 @@ public abstract class FileRiftDataReader : IDataReader
         }
     }
 
-    protected FileRiftDataReader(
-        StreamReader streamReader,
-        IEnumerable<string>? allowedDateFormats)
-    {
-        StreamReader = streamReader;
-        CurrentRow = new string[1];
-        AllowedDateFormats = allowedDateFormats?.ToArray() ?? new string[] { };
-    }
+    // protected FileRiftDataReader(
+    //     StreamReader streamReader,
+    //     IEnumerable<string>? allowedDateFormats)
+    // {
+    //     StreamReader = streamReader;
+    //     CurrentRow = new string[1];
+    //     AllowedDateFormats = allowedDateFormats?.ToArray() ?? [];
+    // }
 
     protected StreamReader StreamReader { get; }
 
 
     protected string[] AllowedDateFormats { get; }
 
-    protected List<string>? Headers { get; set; }
+    protected List<string?>? Headers { get; set; }
 
-    protected string[] CurrentRow { get; private set; }
+    protected string?[] CurrentRow { get; private set; }
 
-    protected IRowSplitter RowSplitter { get; set; }
+    protected IRowSplitter RowSplitter { get; init; }
 
-    protected bool HasHeader => this.Headers?.Any() ?? false;
+    protected bool HasHeader => Headers?.Count > 0;
 
     public int Depth { get; } = 1;
 
@@ -68,13 +68,13 @@ public abstract class FileRiftDataReader : IDataReader
                 throw new InvalidOperationException("Cannot get data by name without headers");
             }
 
-            var ordinal = this.GetOrdinal(name);
+            var ordinal = GetOrdinal(name);
             if (ordinal == -1)
             {
                 throw new ArgumentException($"Header {name} not found");
             }
 
-            return this.GetValue(ordinal);
+            return GetValue(ordinal);
         }
     }
 
@@ -82,7 +82,7 @@ public abstract class FileRiftDataReader : IDataReader
     {
         if (StreamReader.EndOfStream)
         {
-            this.Close();
+            Close();
             return false;
         }
 
@@ -105,12 +105,14 @@ public abstract class FileRiftDataReader : IDataReader
 
     public bool GetBoolean(int i)
     {
-        return bool.Parse(CurrentRow[i]);
+        var value = CurrentRow[i];
+        return value == null ? default : bool.Parse(value);
     }
 
     public byte GetByte(int i)
     {
-        return byte.Parse(CurrentRow[i]);
+        var value = CurrentRow[i];
+        return value == null ? default : byte.Parse(value, CultureInfo.InvariantCulture);
     }
 
     public long GetBytes(int i, long fieldOffset, byte[]? buffer, int bufferoffset, int length)
@@ -135,16 +137,19 @@ public abstract class FileRiftDataReader : IDataReader
         return charArray[0];
     }
 
-    public long GetChars(int columnIndex, long fieldoffset, char[]? buffer, int bufferoffset, int length)
+    public long GetChars(int i, long fieldoffset, char[]? buffer, int bufferoffset, int length)
     {
         ArgumentNullException.ThrowIfNull(buffer);
-        var value = this.GetString(columnIndex).ToCharArray();
+        var value = GetString(i).ToCharArray();
 
         long charRead = 0;
 
-        for (var i = 0; (i < length) && ((i + fieldoffset) < value.Length) && (i + bufferoffset) < buffer.Length; i++)
+        for (var idx = 0;
+             (idx < length) && ((idx + fieldoffset) < value.Length) &&
+             (idx + bufferoffset) < buffer.Length;
+             idx++)
         {
-            buffer[bufferoffset + i] = value[fieldoffset + i];
+            buffer[bufferoffset + idx] = value[fieldoffset + idx];
             charRead++;
         }
 
@@ -163,25 +168,29 @@ public abstract class FileRiftDataReader : IDataReader
 
     public DateTime GetDateTime(int i)
     {
-        var dateAsString = this.GetString(i);
+        var dateAsString = GetString(i);
 
-        if (AllowedDateFormats.Any())
+        if (AllowedDateFormats.Length != 0)
         {
             CultureInfo provider = CultureInfo.InvariantCulture;
             return DateTime.ParseExact(dateAsString, AllowedDateFormats, provider);
         }
-        return DateTime.Parse(dateAsString);
+
+        return DateTime.Parse(dateAsString, CultureInfo.CurrentCulture);
     }
 
     public decimal GetDecimal(int i)
     {
-        return decimal.Parse(CurrentRow[i]);
+        var value = CurrentRow[i];
+
+        return value == null ? default : decimal.Parse(value, CultureInfo.CurrentCulture);
     }
 
     public double GetDouble(int i)
     {
-        return double.Parse(CurrentRow[i]);
-        throw new NotImplementedException();
+        var value = CurrentRow[i];
+
+        return value == null ? default : double.Parse(value, CultureInfo.CurrentCulture);
     }
 
     public Type GetFieldType(int i)
@@ -191,27 +200,47 @@ public abstract class FileRiftDataReader : IDataReader
 
     public float GetFloat(int i)
     {
-        return float.Parse(CurrentRow[i]);
+        var value = CurrentRow[i];
+
+        return value == null ? default : float.Parse(value, CultureInfo.CurrentCulture);
     }
 
     public Guid GetGuid(int i)
     {
-        return Guid.Parse(CurrentRow[i]);
+        var value = CurrentRow[i];
+
+        return value == null ? default : Guid.Parse(value);
     }
 
     public short GetInt16(int i)
     {
-        return short.Parse(CurrentRow[i]);
+        var value = CurrentRow[i];
+
+        return value == null ? default : short.Parse(value, CultureInfo.CurrentCulture);
     }
 
     public int GetInt32(int i)
     {
-        return int.Parse(CurrentRow[i]);
+        var value = CurrentRow[i];
+
+        if (value == null)
+        {
+            return default;
+        }
+
+        return int.Parse(value, CultureInfo.CurrentCulture);
     }
 
     public long GetInt64(int i)
     {
-        return long.Parse(CurrentRow[i]);
+        var value = CurrentRow[i];
+
+        if (value == null)
+        {
+            return default;
+        }
+
+        return long.Parse(value, CultureInfo.CurrentCulture);
     }
 
     public string GetName(int i)
@@ -221,7 +250,13 @@ public abstract class FileRiftDataReader : IDataReader
             throw new InvalidOperationException("Cannot get column name without headers");
         }
 
-        return Headers![i];
+        var header = Headers![i];
+        if (string.IsNullOrEmpty(header))
+        {
+            throw new InvalidOperationException($"Column for index {i} is null");
+        }
+
+        return header;
     }
 
     public int GetOrdinal(string name)
@@ -241,10 +276,17 @@ public abstract class FileRiftDataReader : IDataReader
 
     public object GetValue(int i)
     {
-        return CurrentRow[i];
+        var value = CurrentRow[i];
+
+        if (value == null)
+        {
+            return default;
+        }
+
+        return value;
     }
 
-    public int GetValues(object[] values)
+    public int GetValues(object?[] values)
     {
         int i;
         for (i = 0; i < CurrentRow.Length; i++)
@@ -257,7 +299,7 @@ public abstract class FileRiftDataReader : IDataReader
 
     public bool IsDBNull(int i)
     {
-        var value = this.GetValue(i);
+        var value = GetValue(i);
 
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         return value == null;
@@ -267,11 +309,12 @@ public abstract class FileRiftDataReader : IDataReader
     public void Dispose()
     {
         StreamReader.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     public void Close()
     {
-        this.IsClosed = true;
+        IsClosed = true;
     }
 
     public DataTable GetSchemaTable()

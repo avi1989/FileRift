@@ -18,24 +18,15 @@ public class FixedWidthFileDataReader : FileRiftDataReader
 
     public FixedWidthFileDataReader(
         string fileName,
-        IEnumerable<FixedWidthColumnInfo> columns,
+        ICollection<FixedWidthColumnInfo> columns,
         IEnumerable<string>? allowedDateFormats = null) :
-        base(new StreamReader(fileName), allowedDateFormats)
+        this(fileName,
+             columns.OrderBy(x => x.Position).Select(x => x.Length).ToArray(),
+             allowedDateFormats)
     {
-        this.Headers = new List<string>();
-
-        var orderedColumns = columns.OrderBy(x => x.Position).ToList();
-
-        var lengths = new int[orderedColumns.Count];
-        for (var i = 0; i < orderedColumns.Count; i++)
+        if (columns.All(x => x.Name != null))
         {
-            var column = orderedColumns[i];
-            this.Headers.Add(column.Name);
-            lengths[i] = column.Length;
+            this.Headers = columns.OrderBy(x => x.Position).Select(x => x.Name).ToList();
         }
-
-        this.RowSplitter = new FixedWithRowSplitter(lengths);
     }
-
-
 }

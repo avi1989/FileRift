@@ -6,7 +6,7 @@ public class FixedWidthFileReaderBuilder(string pathToFile)
 {
     private int[]? _columnLengths;
     private List<FixedWidthColumnInfo>? _columns;
-    private string[] _dateFormats;
+    private string[]? _dateFormats;
     private ClassMaps _classMaps = new ClassMaps();
 
     public FixedWidthFileReaderBuilder WithColumnLengths(int[] columnLengths)

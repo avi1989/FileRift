@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Globalization;
+using System.Reflection;
 
 namespace FileRift.Services;
 
@@ -26,7 +27,7 @@ internal class PropertySetter<T> where T : class
         else
         {
             var typeToConvert = prop.PropertyType;
-            var result = Convert.ChangeType(value, typeToConvert);
+            var result = Convert.ChangeType(value, typeToConvert, CultureInfo.CurrentCulture);
             prop?.SetValue(data, result);
         }
     }

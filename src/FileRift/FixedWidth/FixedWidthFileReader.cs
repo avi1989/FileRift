@@ -17,6 +17,7 @@ public class FixedWidthFileReader<T> : TypedFileReader<T> where T : class, new()
                 allowedDateFormats),
             map)
     {
+        
     }
 
     public FixedWidthFileReader(IDataReader reader, ClassMap<T> map) : base(reader, map)

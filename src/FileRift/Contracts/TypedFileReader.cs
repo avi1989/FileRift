@@ -15,7 +15,7 @@ public class TypedFileReader<T>(IDataReader reader, ClassMap<T> map)
         { typeof(short).FullName!, ordinal => reader.GetInt16(ordinal) },
         { typeof(int).FullName!, ordinal => reader.GetInt32(ordinal) },
         { typeof(long).FullName!, ordinal => reader.GetInt64(ordinal) },
-        {typeof(bool).FullName!, ordinal => reader.GetBoolean(ordinal)},
+        { typeof(bool).FullName!, ordinal => reader.GetBoolean(ordinal) },
         { typeof(Guid).FullName!, ordinal => reader.GetGuid(ordinal) },
         { typeof(char).FullName!, ordinal => reader.GetChar(ordinal) },
         { typeof(byte).FullName!, ordinal => reader.GetByte(ordinal) },
@@ -23,6 +23,18 @@ public class TypedFileReader<T>(IDataReader reader, ClassMap<T> map)
         { typeof(double).FullName!, ordinal => reader.GetDouble(ordinal) },
         { typeof(decimal).FullName!, ordinal => reader.GetDecimal(ordinal) },
         { typeof(DateTime).FullName!, ordinal => reader.GetDateTime(ordinal) },
+
+        { typeof(short?).FullName!, ordinal => reader.GetInt16(ordinal) },
+        { typeof(int?).FullName!, ordinal => reader.GetInt32(ordinal) },
+        { typeof(long?).FullName!, ordinal => reader.GetInt64(ordinal) },
+        { typeof(bool?).FullName!, ordinal => reader.GetBoolean(ordinal) },
+        { typeof(Guid?).FullName!, ordinal => reader.GetGuid(ordinal) },
+        { typeof(char?).FullName!, ordinal => reader.GetChar(ordinal) },
+        { typeof(byte?).FullName!, ordinal => reader.GetByte(ordinal) },
+        { typeof(float?).FullName!, ordinal => reader.GetFloat(ordinal) },
+        { typeof(double?).FullName!, ordinal => reader.GetDouble(ordinal) },
+        { typeof(decimal?).FullName!, ordinal => reader.GetDecimal(ordinal) },
+        { typeof(DateTime?).FullName!, ordinal => reader.GetDateTime(ordinal) },
     };
 
     public IEnumerable<T> Read()

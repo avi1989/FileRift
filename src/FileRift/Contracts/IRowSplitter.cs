@@ -6,5 +6,5 @@ namespace FileRift.Contracts;
 
 public interface IRowSplitter
 {
-    string[] SplitRow(string row);
+    string?[] SplitRow(string row);
 }

@@ -4,7 +4,7 @@ using NSubstitute;
 
 namespace FileRift.Tests.Delimited;
 
-public class DelimitedFileDataReaderTests
+public class DelimitedFileDataReaderTests : IDisposable
 {
     private const string SampleCsv = """
                                      Series_reference,Period,Data_value,Suppressed,STATUS,UNITS,Magnitude,Subject,Group,Series_title_1,Series_title_2,Series_title_3,Series_title_4,Series_title_5
@@ -368,6 +368,7 @@ public class DelimitedFileDataReaderTests
         rowSplitter.SplitRow(default!)
             .ReturnsForAnyArgs(new string[] { "firstName", "lastName", "age" });
         using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter);
+        sut.Read();
         Assert.Equal("firstName", sut.GetName(0));
         Assert.Equal("lastName", sut.GetName(1));
         Assert.Equal("age", sut.GetName(2));

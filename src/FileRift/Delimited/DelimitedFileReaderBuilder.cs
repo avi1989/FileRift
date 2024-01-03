@@ -5,11 +5,11 @@ namespace FileRift.Delimited;
 public class DelimitedFileReaderBuilder(string pathToFile)
 {
     private char? _delimiter;
-    private char? _escapeCharacter = null;
-    private bool _hasHeaders = false;
-    private bool _shouldAutoTrim = false;
-    private string[]? _dateFormats = null;
-    private ClassMaps _classMaps = new ClassMaps();
+    private char? _escapeCharacter;
+    private bool _hasHeaders;
+    private bool _shouldAutoTrim;
+    private string[]? _dateFormats;
+    private readonly ClassMaps _classMaps = new ClassMaps();
 
     public DefaultDelimitedFileType Defaults => new DefaultDelimitedFileType(pathToFile);
 
@@ -50,7 +50,7 @@ public class DelimitedFileReaderBuilder(string pathToFile)
             throw new InvalidOperationException("Separator not configured");
         }
 
-        return this.BuildDataReader(_hasHeaders, _delimiter.Value, _escapeCharacter, _shouldAutoTrim, _dateFormats);
+        return BuildDataReader(_hasHeaders, _delimiter.Value, _escapeCharacter, _shouldAutoTrim, _dateFormats);
     }
 
     public DelimitedFileDataReader BuildDataReader(
@@ -81,7 +81,7 @@ public class DelimitedFileReaderBuilder(string pathToFile)
             throw new InvalidOperationException("Cannot build typed data reader without headers");
         }
 
-        return this.Build(_delimiter.Value, _escapeCharacter, classMap, _shouldAutoTrim, _dateFormats);
+        return Build(_delimiter.Value, _escapeCharacter, classMap, _shouldAutoTrim, _dateFormats);
     }
 
     public DelimitedFileReader<T> Build<T>() where T : class, new()
@@ -104,7 +104,7 @@ public class DelimitedFileReaderBuilder(string pathToFile)
                 $"Class map not found for {typeof(T).FullName}. Either register it or invoke build with the class map");
         }
 
-        return this.Build(_delimiter.Value, _escapeCharacter, classMap, _shouldAutoTrim, _dateFormats);
+        return Build(_delimiter.Value, _escapeCharacter, classMap, _shouldAutoTrim, _dateFormats);
     }
 
 
