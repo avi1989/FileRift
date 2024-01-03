@@ -43,6 +43,23 @@ public class DelimitedFileReaderBuilder(string pathToFile)
         return this;
     }
 
+    public DelimitedFileReaderBuilder AutoConfigure(int rowsToRead = 20)
+    {
+        using var streamReader = new StreamReader(pathToFile);
+        var fileTypeDetector = new DelimitedFileTypeDetector();
+        var config = fileTypeDetector.GetFileSettings(streamReader, rowsToRead);
+
+        if (config == null)
+        {
+            throw new InvalidOperationException(
+                $"Unable to autoconfigure data for file {pathToFile}");
+        }
+
+        this._delimiter = config.Delimiter;
+        this._escapeCharacter = config.EscapeCharacter;
+        return this;
+    }
+
     public DelimitedFileDataReader BuildDataReader()
     {
         if (_delimiter == null)
@@ -50,8 +67,13 @@ public class DelimitedFileReaderBuilder(string pathToFile)
             throw new InvalidOperationException("Separator not configured");
         }
 
-        return BuildDataReader(_hasHeaders, _delimiter.Value, _escapeCharacter, _shouldAutoTrim, _dateFormats);
+        return BuildDataReader(_hasHeaders,
+                               _delimiter.Value,
+                               _escapeCharacter,
+                               _shouldAutoTrim,
+                               _dateFormats);
     }
+
 
     public DelimitedFileDataReader BuildDataReader(
         bool hasHeaders,

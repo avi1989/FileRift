@@ -9,6 +9,8 @@ public class TypedFileReader<T>(IDataReader reader, ClassMap<T> map)
 {
     private readonly PropertySetter<T> _propertySetter = new();
 
+    public IDataReader DataReader => reader;
+
     protected Dictionary<string, Func<int, object>> DataTypeReaders => new()
     {
         { typeof(string).FullName!, ordinal => reader.GetString(ordinal) },

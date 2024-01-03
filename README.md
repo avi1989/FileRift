@@ -20,6 +20,30 @@ dotnet add FileRift
 FileRift provides a simple way to read CSV files and map them into a class using a fluent interface. Example usage:
 
 ```csharp
+var classMap = new ClassMap<Person>();
+classMap.AddColumnMap("FirstName", x => x.FirstName)
+    .AddColumnMap("LastName", x => x.LastName)
+    .AddColumnMap("Age", x => x.Age)
+    .AddColumnMap("IsStudent", x => x.IsStudent)
+    .AddColumnMap("Id", x => x.Id);
+
+// Building the file reader
+ var fileReader = FileReaderBuilder.BuildDelimitedReader(pathToFile)
+            .HasHeaders()
+            .AutoConfigure()
+            .Build(classMap);
+
+// Reading the file
+IEnumerable<Person> results = fileReader.Read()
+```
+
+Note that we are configuring the delimters or escape characters. FileRift
+automatically reads the first 20 lines of the file and tries to detect the 
+delimiters and separators.
+
+#### Manual configuration
+You can also choose to configure the reader manually. You can do that as described below.
+```csharp
 // Setting up the class mapping
 var classMap = new ClassMap<Person>();
 classMap.AddColumnMap("FirstName", x => x.FirstName)
@@ -47,9 +71,12 @@ IEnumerable<Person> results = fileReader.Read()
 
 FileRift also allows direct access to the underlying DataReader for more flexibility:
 ```csharp
-// A
-var rowSplitter = new DelimitedRowSplitter(',', '\"', true);
-using var reader = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter);
+
+using var reader = FileRiftBuilder
+    .BuildDelimitedReader(pathToFile)
+    .WithHeaders()
+    .AutoConfigure()
+    .BuildDataReader():
 
 while(reader.Read()) 
 {
@@ -75,7 +102,7 @@ classMap.AddColumnMap("FirstName", x => x.FirstName)
     .AddColumnMap("IsStudent", x => x.IsStudent)
     .AddColumnMap("Id", x => x.Id);
 
- var fileReader = FileReaderBuilder.BuildDelimitedReader(pathToFile)
+ var fileReader = FileRiftBuilder.BuildDelimitedReader(pathToFile)
             .HasHeaders()
             .WithDelimiter('|')
             .WithDateFormats("MM/dd/yyyy", "yyyy-MM-dd")
@@ -127,7 +154,7 @@ var columns = new List<FixedWidthColumnInfo>()
 };
 
 // var fileReader = new FixedWidthFileReader<Person>(pathToFile, columns, classMap);
-var fileReader = FileReaderBuilder.BuildFixedWidthReader(pathToFile)
+var fileReader = FileRiftBuilder.BuildFixedWidthReader(pathToFile)
     .WithColumns(columns)
     .Build(classMap);
 
@@ -154,7 +181,7 @@ Now, you can read a file at any time without reconfiguring the ClassMap:
 
 ```csharp
  var pathToFile = Path.Join(_basePath, "Files", "CsvWithHeader.csv");
-var fileReader = FileReaderBuilder.BuildDelimitedReader(pathToFile)
+var fileReader = FileRiftBuilder.BuildDelimitedReader(pathToFile)
     .HasHeaders()
     .WithDelimiter(',')
     .WithEscapeCharacter('\"')
@@ -168,7 +195,6 @@ var results = fileReader.Read().ToList();
 
 - Perform AutoMapping for properties that match the property name exactly
 - Allow mapping into types that have a constructor with parameters.
-- Add defaults for common file types to make building them easily.
 
 ## Known Issues
 - FileRift currently has issues with nullable types like int?. I am working on fixing this.

@@ -3,7 +3,7 @@ using FileRift.FixedWidth;
 
 namespace FileRift;
 
-public static class FileReaderBuilder
+public static class FileRiftBuilder
 {
     public static DelimitedFileReaderBuilder BuildDelimitedReader(string pathToFile)
     {
