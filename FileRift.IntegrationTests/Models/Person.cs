@@ -11,4 +11,6 @@ public class Person
     public int Age { get; set; }
 
     public bool IsStudent { get; set; }
+    
+    public string Nulls { get; set; }
 }

@@ -10,12 +10,13 @@ public class DelimitedFileDataReader : FileRiftDataReader
         char delimiter,
         char? escapeCharacter,
         bool shouldAutoTrim = false,
+        bool shouldConvertWhitespaceToNulls = false,
         IEnumerable<string>? allowedDateFormats = null) :
         base(
             new StreamReader(fileName),
             hasHeaders,
             allowedDateFormats,
-            new DelimitedRowSplitter(delimiter, escapeCharacter, shouldAutoTrim))
+            new DelimitedRowSplitter(delimiter, escapeCharacter, shouldAutoTrim, shouldConvertWhitespaceToNulls))
     {
     }
 

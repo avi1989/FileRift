@@ -7,7 +7,7 @@ public class FixedWidthFileReaderBuilder(string pathToFile)
     private int[]? _columnLengths;
     private List<FixedWidthColumnInfo>? _columns;
     private string[]? _dateFormats;
-    private ClassMaps _classMaps = new ClassMaps();
+    private readonly ClassMaps _classMaps = new ClassMaps();
 
     public FixedWidthFileReaderBuilder WithColumnLengths(int[] columnLengths)
     {
@@ -41,11 +41,23 @@ public class FixedWidthFileReaderBuilder(string pathToFile)
         return new FixedWidthFileDataReader(pathToFile, columns, allowedDateFormats);
     }
 
+    public FixedWidthFileDataReader BuildDataReader()
+    {
+        if (_columns == null)
+        {
+            throw new InvalidOperationException("Cannot Initialize Data Reader without columns");
+        }
+
+        return new FixedWidthFileDataReader(pathToFile, _columns, _dateFormats);
+    }
+
     public FixedWidthFileReader<T> Build<T>(ClassMap<T> classMap) where T : class, new()
     {
-        if (_columns == null || _columns.Count == 0)
+        if (_columns == null ||
+            _columns.Count == 0)
         {
-            throw new InvalidOperationException("Cannot create typed reader without column information");
+            throw new InvalidOperationException(
+                "Cannot create typed reader without column information");
         }
 
         return new FixedWidthFileReader<T>(pathToFile, _columns, classMap, _dateFormats);
@@ -53,9 +65,11 @@ public class FixedWidthFileReaderBuilder(string pathToFile)
 
     public FixedWidthFileReader<T> Build<T>() where T : class, new()
     {
-        if (_columns == null || _columns.Count == 0)
+        if (_columns == null ||
+            _columns.Count == 0)
         {
-            throw new InvalidOperationException("Cannot create typed reader without column information");
+            throw new InvalidOperationException(
+                "Cannot create typed reader without column information");
         }
 
         var classMap = _classMaps.GetClassMap<T>();

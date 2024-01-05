@@ -2,7 +2,11 @@
 
 namespace FileRift.Delimited;
 
-public class DelimitedRowSplitter(char delimiter, char? escapeCharacter, bool shouldTrimSpaces = false)
+public class DelimitedRowSplitter(
+    char delimiter,
+    char? escapeCharacter,
+    bool shouldTrimSpaces = false,
+    bool shouldConvertWhitespaceToNulls = false)
     : IRowSplitter
 {
     public string[] SplitRow(string row)
@@ -18,13 +22,10 @@ public class DelimitedRowSplitter(char delimiter, char? escapeCharacter, bool sh
                 isEscaped = !isEscaped;
             }
 
-            if (!isEscaped && (row[i] == '\r' || row[i] == '\n' || row[i] == delimiter))
+            if (!isEscaped &&
+                (row[i] == '\r' || row[i] == '\n' || row[i] == delimiter))
             {
                 var col = row[start..(i)];
-                if (shouldTrimSpaces)
-                {
-                    col = col.Trim();
-                }
 
                 var colString = col.ToString();
 
@@ -33,11 +34,22 @@ public class DelimitedRowSplitter(char delimiter, char? escapeCharacter, bool sh
                     colString = colString.Replace(escapeCharacter.ToString()!, "");
                 }
 
+                if (shouldTrimSpaces)
+                {
+                    colString = colString.Trim();
+                }
+
+                if (shouldConvertWhitespaceToNulls && string.IsNullOrWhiteSpace(colString))
+                {
+                    colString = null;
+                }
+
                 result.Add(colString);
 
                 start = i + 1;
 
-                if (row[i] == '\r' || row[i] == '\n')
+                if (row[i] == '\r' ||
+                    row[i] == '\n')
                 {
                     break;
                 }

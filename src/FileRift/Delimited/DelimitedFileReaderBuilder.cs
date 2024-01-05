@@ -10,6 +10,7 @@ public class DelimitedFileReaderBuilder(string pathToFile)
     private bool _shouldAutoTrim;
     private string[]? _dateFormats;
     private readonly ClassMaps _classMaps = new ClassMaps();
+    private bool _nullsInsteadOfBlanks = false;
 
     public DefaultDelimitedFileType Defaults => new DefaultDelimitedFileType(pathToFile);
 
@@ -43,6 +44,12 @@ public class DelimitedFileReaderBuilder(string pathToFile)
         return this;
     }
 
+    public DelimitedFileReaderBuilder WithNullsInsteadOfBlanks()
+    {
+        _nullsInsteadOfBlanks = true;
+        return this;
+    }
+
     public DelimitedFileReaderBuilder AutoConfigure(int rowsToRead = 20)
     {
         using var streamReader = new StreamReader(pathToFile);
@@ -67,19 +74,24 @@ public class DelimitedFileReaderBuilder(string pathToFile)
             throw new InvalidOperationException("Separator not configured");
         }
 
-        return BuildDataReader(_hasHeaders,
-                               _delimiter.Value,
-                               _escapeCharacter,
-                               _shouldAutoTrim,
-                               _dateFormats);
+        return BuildDataReader(
+            pathToFile,
+            _hasHeaders,
+            _delimiter.Value,
+            _escapeCharacter,
+            _shouldAutoTrim,
+            _nullsInsteadOfBlanks,
+            _dateFormats);
     }
 
 
-    public DelimitedFileDataReader BuildDataReader(
+    public static DelimitedFileDataReader BuildDataReader(
+        string pathToFile,
         bool hasHeaders,
         char delimiter,
         char? escapeCharacter,
         bool shouldAutoTrim = false,
+        bool shouldConvertWhitespaceToNulls = false,
         IEnumerable<string>? allowedDateFormats = null)
     {
         return new DelimitedFileDataReader(
@@ -88,6 +100,7 @@ public class DelimitedFileReaderBuilder(string pathToFile)
             delimiter,
             escapeCharacter,
             shouldAutoTrim,
+            shouldConvertWhitespaceToNulls,
             allowedDateFormats);
     }
 
@@ -103,7 +116,7 @@ public class DelimitedFileReaderBuilder(string pathToFile)
             throw new InvalidOperationException("Cannot build typed data reader without headers");
         }
 
-        return Build(_delimiter.Value, _escapeCharacter, classMap, _shouldAutoTrim, _dateFormats);
+        return Build(_delimiter.Value, _escapeCharacter, classMap, _shouldAutoTrim, _nullsInsteadOfBlanks, _dateFormats);
     }
 
     public DelimitedFileReader<T> Build<T>() where T : class, new()
@@ -126,7 +139,7 @@ public class DelimitedFileReaderBuilder(string pathToFile)
                 $"Class map not found for {typeof(T).FullName}. Either register it or invoke build with the class map");
         }
 
-        return Build(_delimiter.Value, _escapeCharacter, classMap, _shouldAutoTrim, _dateFormats);
+        return Build(_delimiter.Value, _escapeCharacter, classMap, _shouldAutoTrim, _nullsInsteadOfBlanks, _dateFormats);
     }
 
 
@@ -135,6 +148,7 @@ public class DelimitedFileReaderBuilder(string pathToFile)
         char? escapeCharacter,
         ClassMap<T> classMap,
         bool shouldAutoTrim = false,
+        bool shouldConvertWhitespaceToNulls = false,
         IEnumerable<string>? allowedDateFormats = null) where T : class, new()
     {
         if (_delimiter == null)
@@ -149,6 +163,7 @@ public class DelimitedFileReaderBuilder(string pathToFile)
             escapeCharacter,
             classMap,
             shouldAutoTrim,
+            shouldConvertWhitespaceToNulls,
             allowedDateFormats);
     }
 

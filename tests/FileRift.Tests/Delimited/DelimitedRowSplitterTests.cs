@@ -150,4 +150,52 @@ public class DelimitedRowSplitterTests
         Assert.Equal("part2", result[1]);
         Assert.Equal("part3", result[2]);
     }
+    
+    [Fact]
+    public void SplitRow_PartContainsSpaces_TrimSpacesIfRequestedEvenIfEscaped()
+    {
+        var splitter = new DelimitedRowSplitter(',', '\"', true);
+        var row = "part1,\" part2 \",part3";
+
+        // Act
+        var result = splitter.SplitRow(row);
+
+        // Assert
+        Assert.Equal(3, result.Length);
+        Assert.Equal("part1", result[0]);
+        Assert.Equal("part2", result[1]);
+        Assert.Equal("part3", result[2]);
+    }
+    
+    [Fact]
+    public void SplitRow_ShouldNotConvertWhitespacesToNulls_ByDefault()
+    {
+        var splitter = new DelimitedRowSplitter(',', '\"', true);
+        var row = "part1,,part3";
+
+        // Act
+        var result = splitter.SplitRow(row);
+
+        // Assert
+        Assert.Equal(3, result.Length);
+        Assert.Equal("part1", result[0]);
+        Assert.Equal("", result[1]);
+        Assert.Equal("part3", result[2]);
+    }
+    
+    [Fact]
+    public void SplitRow_ShoulConvertWhitespacesToNulls_IfRequested()
+    {
+        var splitter = new DelimitedRowSplitter(',', '\"', true, true);
+        var row = "part1,,part3";
+
+        // Act
+        var result = splitter.SplitRow(row);
+
+        // Assert
+        Assert.Equal(3, result.Length);
+        Assert.Equal("part1", result[0]);
+        Assert.Null(result[1]);
+        Assert.Equal("part3", result[2]);
+    }
 }
