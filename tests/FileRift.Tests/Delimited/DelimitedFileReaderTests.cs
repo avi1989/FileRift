@@ -71,7 +71,7 @@ public class DelimitedFileReaderTests
     }
     
     [Fact]
-    public void Read_Should_ThrowAnExceptionWithLineNumber_IfReadingDataFailed()
+    public void Read_Should_ThrowAnExceptionWithLineNumber_IfReadingDataFailed_ByDefault()
     {
         var classMap = new ClassMap<Test>();
         classMap.AddColumnMap("First Name", x => x.FirstName)
@@ -97,5 +97,32 @@ public class DelimitedFileReaderTests
         });
         
         Assert.Equal(2, exception.RowNumber);
+    }
+    
+    [Fact]
+    public void Read_Should_NotThrowAnExceptionWithLineNumber_IfReadingDataFailed_IfRequested()
+    {
+        var classMap = new ClassMap<Test>();
+        classMap.AddColumnMap("First Name", x => x.FirstName)
+            .AddColumnMap("LName", x => x.LastName)
+            .AddColumnMap("Age", x => x.Age);
+
+        var dataReader = Substitute.For<IFileRiftDataReader>();
+        dataReader.Read().Returns(true, true, false);
+        dataReader.GetOrdinal("First Name").Returns(0);
+        dataReader.GetOrdinal("LName").Returns(1);
+        dataReader.GetOrdinal("Age").Returns(2);
+
+        dataReader.GetString(0).Returns(x => "John", x => throw new Exception());
+        dataReader.GetString(1).Returns("Doe", "Dow");
+        dataReader.GetInt32(2).Returns(12, 14);
+        dataReader.CurrentRowNumber.Returns(2);
+
+        var delimitedFileReader = new DelimitedFileReader<Test>(dataReader, classMap, true);
+
+        delimitedFileReader.Read().ToList();
+        Assert.Equal(1, delimitedFileReader.Errors.Count);
+        Assert.Equal(2, delimitedFileReader.Errors.First().RowNumber);
+        
     }
 }

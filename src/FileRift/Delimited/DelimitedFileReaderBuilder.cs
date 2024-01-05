@@ -164,6 +164,7 @@ public class DelimitedFileReaderBuilder(string pathToFile)
             classMap,
             shouldAutoTrim,
             shouldConvertWhitespaceToNulls,
+            default,
             allowedDateFormats);
     }
 

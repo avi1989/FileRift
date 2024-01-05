@@ -14,6 +14,7 @@ public class DelimitedFileReader<T> : TypedFileReader<T> where T : class, new()
         ClassMap<T> map,
         bool shouldAutoTrim = false,
         bool shouldConvertWhitespaceToNulls = false,
+        bool shouldIgnoreErrors = false,
         IEnumerable<string>? allowedDateFormats = null)
         : base(new DelimitedFileDataReader(
                    fileName,
@@ -23,11 +24,15 @@ public class DelimitedFileReader<T> : TypedFileReader<T> where T : class, new()
                    shouldAutoTrim,
                    shouldConvertWhitespaceToNulls,
                    allowedDateFormats),
-               map)
+               map,
+               shouldIgnoreErrors)
     {
     }
 
-    internal DelimitedFileReader(IFileRiftDataReader reader, ClassMap<T> map) : base(reader, map)
+    internal DelimitedFileReader(
+        IFileRiftDataReader reader,
+        ClassMap<T> map,
+        bool shouldIgnoreErrors = false) : base(reader, map, shouldIgnoreErrors)
     {
     }
 }

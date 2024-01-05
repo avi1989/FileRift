@@ -4,12 +4,19 @@ using FileRift.Services;
 
 namespace FileRift.Contracts;
 
-public class TypedFileReader<T>(IFileRiftDataReader reader, ClassMap<T> map)
+public class TypedFileReader<T>(
+    IFileRiftDataReader reader,
+    ClassMap<T> map,
+    bool ignoreErrors = false)
     where T : class, new()
 {
     private readonly PropertySetter<T> _propertySetter = new();
 
+    private readonly List<ReadError> _errors = new();
+
     public IFileRiftDataReader DataReader => reader;
+
+    public IReadOnlyCollection<ReadError> Errors => _errors;
 
     protected Dictionary<string, Func<int, object>> DataTypeReaders => new()
     {
@@ -39,7 +46,7 @@ public class TypedFileReader<T>(IFileRiftDataReader reader, ClassMap<T> map)
         { typeof(DateTime?).FullName!, ordinal => reader.GetDateTime(ordinal) },
     };
 
-    public IEnumerable<T> Read()
+    public IEnumerable<T> Read1()
     {
         while (reader.Read())
         {
@@ -90,6 +97,80 @@ public class TypedFileReader<T>(IFileRiftDataReader reader, ClassMap<T> map)
 
                 // // var value = reader.GetString(ordinal);
                 _propertySetter.SetValue(res, item.PropertyName, typedValue);
+            }
+
+            yield return res;
+        }
+    }
+
+    public IEnumerable<T> Read()
+    {
+        while (reader.Read())
+        {
+            T res = new T();
+
+            try
+            {
+                foreach (var item in map.ColumnMappings)
+                {
+                    int ordinal;
+                    try
+                    {
+                        ordinal = reader.GetOrdinal(item.ColumnName);
+
+                        if (ordinal == -1)
+                        {
+                            continue;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new RowReadException(reader.CurrentRowNumber,
+                                                   reader.CurrentRowRaw,
+                                                   ex);
+                    }
+
+                    object? typedValue;
+
+                    if (DataTypeReaders.TryGetValue(item.DataType, out var readerFunc))
+                    {
+                        try
+                        {
+                            typedValue = readerFunc(ordinal);
+                        }
+                        catch (Exception e)
+                        {
+                            throw new RowReadException(
+                                reader.CurrentRowNumber,
+                                reader.CurrentRowRaw,
+                                $"Unable to get property {item.ColumnName} with type {item.DataType}",
+                                e);
+                        }
+                    }
+                    else
+                    {
+                        throw new RowReadException(
+                            reader.CurrentRowNumber,
+                            reader.CurrentRowRaw,
+                            $"Unable to set property {item.ColumnName} with type {item.DataType}",
+                            null);
+                    }
+
+                    // // var value = reader.GetString(ordinal);
+                    _propertySetter.SetValue(res, item.PropertyName, typedValue);
+                }
+            }
+            catch (Exception e)
+            {
+                if (ignoreErrors)
+                {
+                    _errors.Add(new (reader.CurrentRowNumber, reader.CurrentRowRaw, e));
+                    continue;
+                }
+                else
+                {
+                    throw;
+                }
             }
 
             yield return res;
