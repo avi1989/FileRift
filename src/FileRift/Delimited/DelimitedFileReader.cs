@@ -27,7 +27,7 @@ public class DelimitedFileReader<T> : TypedFileReader<T> where T : class, new()
     {
     }
 
-    internal DelimitedFileReader(IDataReader reader, ClassMap<T> map) : base(reader, map)
+    internal DelimitedFileReader(IFileRiftDataReader reader, ClassMap<T> map) : base(reader, map)
     {
     }
 }

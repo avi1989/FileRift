@@ -198,4 +198,16 @@ public class DelimitedRowSplitterTests
         Assert.Null(result[1]);
         Assert.Equal("part3", result[2]);
     }
+
+    [Fact]
+    public void ShouldSplit_CrazyRow()
+    {
+        var splitter = new DelimitedRowSplitter(',', '\"', true, true);
+        var row =
+            "\"42\",\"471760866\",Ty\"Anthony\",\"J\",\"Anderson\",\"\",\"1213\",\"Canter Pl\",\"                    \",\"Roebuck\",\"29376\",\"\",\"\",\"\",\"\",\"\",\"Male\",\"Black/African\",\"20230707\",\"20011202\",\"\",\"N\",\"N\",\"N\",\"N\",\"N\",\"N\",\"\",\"119\",\"Roebuck Bethlehem\",\"\",\"031\",\"12\",\"01\",\"06\",\"\",\"04\",\"Active\",\"\",\"";
+        
+        var result = splitter.SplitRow(row);
+        
+        Assert.Equal(40, result.Length);
+    }
 }

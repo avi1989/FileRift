@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using FileRift.Contracts;
 using FileRift.FixedWidth;
 using FileRift.Mappers;
 using FileRift.Tests.Models;
@@ -16,7 +17,7 @@ public class FixedWidthReaderTests
             .AddColumnMap("LName", x => x.LastName)
             .AddColumnMap("Age", x => x.Age);
 
-        var dataReader = Substitute.For<IDataReader>();
+        var dataReader = Substitute.For<IFileRiftDataReader>();
         dataReader.Read().Returns(true, true, false);
         dataReader.GetOrdinal("First Name").Returns(0);
         dataReader.GetOrdinal("LName").Returns(1);

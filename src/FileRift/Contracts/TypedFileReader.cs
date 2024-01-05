@@ -4,12 +4,12 @@ using FileRift.Services;
 
 namespace FileRift.Contracts;
 
-public class TypedFileReader<T>(IDataReader reader, ClassMap<T> map)
+public class TypedFileReader<T>(IFileRiftDataReader reader, ClassMap<T> map)
     where T : class, new()
 {
     private readonly PropertySetter<T> _propertySetter = new();
 
-    public IDataReader DataReader => reader;
+    public IFileRiftDataReader DataReader => reader;
 
     protected Dictionary<string, Func<int, object>> DataTypeReaders => new()
     {
@@ -47,23 +47,45 @@ public class TypedFileReader<T>(IDataReader reader, ClassMap<T> map)
             var res = new T();
             foreach (var item in map.ColumnMappings)
             {
-                var ordinal = reader.GetOrdinal(item.ColumnName);
-
-                if (ordinal == -1)
+                int ordinal;
+                try
                 {
-                    continue;
+                    ordinal = reader.GetOrdinal(item.ColumnName);
+
+                    if (ordinal == -1)
+                    {
+                        continue;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw new RowReadException(reader.CurrentRowNumber, reader.CurrentRowRaw, ex);
                 }
 
                 object? typedValue;
 
                 if (DataTypeReaders.TryGetValue(item.DataType, out var readerFunc))
                 {
-                    typedValue = readerFunc(ordinal);
+                    try
+                    {
+                        typedValue = readerFunc(ordinal);
+                    }
+                    catch (Exception e)
+                    {
+                        throw new RowReadException(
+                            reader.CurrentRowNumber,
+                            reader.CurrentRowRaw,
+                            $"Unable to get property {item.ColumnName} with type {item.DataType}",
+                            e);
+                    }
                 }
                 else
                 {
-                    throw new InvalidOperationException(
-                        $"Unable to set property {item.ColumnName} with type {item.DataType}");
+                    throw new RowReadException(
+                        reader.CurrentRowNumber,
+                        reader.CurrentRowRaw,
+                        $"Unable to set property {item.ColumnName} with type {item.DataType}",
+                        null);
                 }
 
                 // // var value = reader.GetString(ordinal);

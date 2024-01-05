@@ -20,7 +20,7 @@ public class FixedWidthFileReader<T> : TypedFileReader<T> where T : class, new()
         
     }
 
-    public FixedWidthFileReader(IDataReader reader, ClassMap<T> map) : base(reader, map)
+    public FixedWidthFileReader(IFileRiftDataReader reader, ClassMap<T> map) : base(reader, map)
     {
     }
 }

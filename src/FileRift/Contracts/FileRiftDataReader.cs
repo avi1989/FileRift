@@ -1,11 +1,14 @@
-﻿using System.Data;
+﻿using System.Collections.ObjectModel;
+using System.Data;
 using System.Diagnostics;
 using System.Globalization;
 
 namespace FileRift.Contracts;
 
-public abstract class FileRiftDataReader : IDataReader
+public abstract class FileRiftDataReader : IFileRiftDataReader
 {
+    private List<string>? _headers;
+
     protected FileRiftDataReader(
         StreamReader streamReader,
         bool hasHeaders,
@@ -22,8 +25,8 @@ public abstract class FileRiftDataReader : IDataReader
             var firstLine = StreamReader.ReadLine();
             Debug.Assert(firstLine != null);
 
-            Headers = RowSplitter.SplitRow(firstLine).ToList();
-            FieldCount = Headers.Count;
+            _headers = RowSplitter.SplitRow(firstLine).ToList();
+            FieldCount = _headers.Count;
         }
     }
 
@@ -36,20 +39,27 @@ public abstract class FileRiftDataReader : IDataReader
     //     AllowedDateFormats = allowedDateFormats?.ToArray() ?? [];
     // }
 
+    public int CurrentRowNumber { get; private set; }
+
     protected StreamReader StreamReader { get; }
 
+    public string[] AllowedDateFormats { get; }
+    
+    public IReadOnlyCollection<string>? Headers
+    {
+        get { return _headers; }
+        protected set { _headers = value?.ToList(); }
+    }
 
-    protected string[] AllowedDateFormats { get; }
-
-    protected List<string?>? Headers { get; set; }
-
-    protected string?[] CurrentRow { get; private set; }
+    public string?[] CurrentRow { get; private set; }
 
     protected IRowSplitter RowSplitter { get; init; }
 
-    protected bool HasHeader => Headers?.Count > 0;
+    protected bool HasHeader => _headers?.Count > 0;
 
     public int Depth { get; } = 1;
+
+    public string CurrentRowRaw { get; private set; }
 
     public bool IsClosed { get; private set; }
 
@@ -80,15 +90,16 @@ public abstract class FileRiftDataReader : IDataReader
 
     public bool Read()
     {
+        CurrentRowNumber++;
         if (StreamReader.EndOfStream)
         {
             Close();
             return false;
         }
 
-        var rawRow = StreamReader.ReadLine()!;
+        CurrentRowRaw = StreamReader.ReadLine()!;
 
-        CurrentRow = RowSplitter.SplitRow(rawRow);
+        CurrentRow = RowSplitter.SplitRow(CurrentRowRaw);
 
         if (FieldCount == -1)
         {
@@ -250,7 +261,7 @@ public abstract class FileRiftDataReader : IDataReader
             throw new InvalidOperationException("Cannot get column name without headers");
         }
 
-        var header = Headers![i];
+        var header = _headers![i];
         if (string.IsNullOrEmpty(header))
         {
             throw new InvalidOperationException($"Column for index {i} is null");
@@ -266,7 +277,7 @@ public abstract class FileRiftDataReader : IDataReader
             throw new InvalidOperationException("Cannot get column name without headers");
         }
 
-        return Headers!.IndexOf(name);
+        return _headers!.IndexOf(name);
     }
 
     public string GetString(int i)

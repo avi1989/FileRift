@@ -17,6 +17,7 @@ public class DelimitedRowSplitter(
 
         for (var i = 0; i < row.Length; i++)
         {
+            char currentChar = row[i];
             if (row[i] == escapeCharacter)
             {
                 isEscaped = !isEscaped;
