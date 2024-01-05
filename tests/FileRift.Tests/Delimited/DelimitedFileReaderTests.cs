@@ -118,7 +118,7 @@ public class DelimitedFileReaderTests
         dataReader.GetInt32(2).Returns(12, 14);
         dataReader.CurrentRowNumber.Returns(2);
 
-        var delimitedFileReader = new DelimitedFileReader<Test>(dataReader, classMap, true);
+        var delimitedFileReader = new DelimitedFileReader<Test>(dataReader, classMap, shouldIgnoreErrors: true);
 
         delimitedFileReader.Read().ToList();
         Assert.Equal(1, delimitedFileReader.Errors.Count);
