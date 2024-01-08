@@ -8,17 +8,20 @@ namespace FileRift.Contracts;
 public abstract class FileRiftDataReader : IFileRiftDataReader
 {
     private List<string>? _headers;
+    private readonly char? _enclosingCharacter;
 
     protected FileRiftDataReader(
         StreamReader streamReader,
         bool hasHeaders,
         IEnumerable<string>? allowedDateFormats,
-        IRowSplitter rowSplitter)
+        IRowSplitter rowSplitter,
+        char? enclosingCharacter)
     {
         RowSplitter = rowSplitter;
         StreamReader = streamReader;
         CurrentRow = new string[1];
         AllowedDateFormats = allowedDateFormats?.ToArray() ?? [];
+        _enclosingCharacter = enclosingCharacter;
 
         if (hasHeaders)
         {
@@ -44,7 +47,7 @@ public abstract class FileRiftDataReader : IFileRiftDataReader
     protected StreamReader StreamReader { get; }
 
     public string[] AllowedDateFormats { get; }
-    
+
     public IReadOnlyCollection<string>? Headers
     {
         get { return _headers; }
@@ -97,16 +100,76 @@ public abstract class FileRiftDataReader : IFileRiftDataReader
             return false;
         }
 
-        CurrentRowRaw = StreamReader.ReadLine()!;
-
-        CurrentRow = RowSplitter.SplitRow(CurrentRowRaw);
-
-        if (FieldCount == -1)
+        if (_enclosingCharacter == null)
         {
-            FieldCount = CurrentRow.Length;
+            CurrentRowRaw = StreamReader.ReadLine()!;
+            CurrentRow = RowSplitter.SplitRow(CurrentRowRaw);
+            if (FieldCount == -1)
+            {
+                FieldCount = CurrentRow.Length;
+            }
+
+            return true;
+        }
+        else
+        {
+            int? charInt = null;
+            bool isEscaped = false;
+            string row = "";
+            while ((charInt = StreamReader.Read()) != null)
+            {
+                if (StreamReader.EndOfStream)
+                {
+                    Close();
+
+                    if (!string.IsNullOrEmpty(row))
+                    {
+                        CurrentRowRaw = row;
+                        CurrentRow = RowSplitter.SplitRow(CurrentRowRaw);
+                        if (FieldCount == -1)
+                        {
+                            FieldCount = CurrentRow.Length;
+                        }
+
+                        return true;
+                    }
+                    return false;
+                }
+                
+                var @char = (char)charInt!;
+                if (@char == _enclosingCharacter)
+                {
+                    isEscaped = !isEscaped;
+                }
+
+                if (@char is '\r' or '\n')
+                {
+                    if (isEscaped)
+                    {
+                        // continue
+                    }
+                    else if (@char is '\r')
+                    {
+                        continue;
+                    }
+                    else
+                    {
+                        CurrentRowRaw = row;
+                        CurrentRow = RowSplitter.SplitRow(CurrentRowRaw);
+                        if (FieldCount == -1)
+                        {
+                            FieldCount = CurrentRow.Length;
+                        }
+
+                        return true;
+                    }
+                }
+
+                row += @char;
+            }
         }
 
-        return true;
+        return false;
     }
 
     public bool NextResult()

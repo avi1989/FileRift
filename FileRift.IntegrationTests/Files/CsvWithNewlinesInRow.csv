@@ -1,0 +1,5 @@
+Id,FirstName,LastName,Age,IsStudent,Nulls
+cd0cf662-9983-4152-8230-2a6f225ad985, John, Doe, 25, true, "John
+"
+b3436c0e-7eb4-4620-b9eb-7890c3462fbe, Jane, "Mary
+Doe", 22, false, ""

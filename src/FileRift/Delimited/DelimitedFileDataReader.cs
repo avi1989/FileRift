@@ -16,13 +16,22 @@ public class DelimitedFileDataReader : FileRiftDataReader
             new StreamReader(fileName),
             hasHeaders,
             allowedDateFormats,
-            new DelimitedRowSplitter(delimiter, escapeCharacter, shouldAutoTrim, shouldConvertWhitespaceToNulls))
+            new DelimitedRowSplitter(delimiter,
+                                     escapeCharacter,
+                                     shouldAutoTrim,
+                                     shouldConvertWhitespaceToNulls),
+            escapeCharacter)
     {
     }
 
-    internal DelimitedFileDataReader(Stream stream, bool hasHeaders, IRowSplitter rowSplitter,
-        IEnumerable<string>? allowedDateFormats = null)
-        : base(new StreamReader(stream), hasHeaders, allowedDateFormats, rowSplitter)
+    internal DelimitedFileDataReader(
+        Stream stream,
+        bool hasHeaders,
+        IRowSplitter rowSplitter,
+        char? enclosingCharacter,
+        IEnumerable<string>? allowedDateFormats = null
+    )
+        : base(new StreamReader(stream), hasHeaders, allowedDateFormats, rowSplitter, enclosingCharacter)
     {
     }
 }

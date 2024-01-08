@@ -200,14 +200,17 @@ public class DelimitedRowSplitterTests
     }
 
     [Fact]
-    public void ShouldSplit_CrazyRow()
+    public void ShouldAllowNewlinesInEnclosedString()
     {
         var splitter = new DelimitedRowSplitter(',', '\"', true, true);
-        var row =
-            "\"42\",\"471760866\",Ty\"Anthony\",\"J\",\"Anderson\",\"\",\"1213\",\"Canter Pl\",\"                    \",\"Roebuck\",\"29376\",\"\",\"\",\"\",\"\",\"\",\"Male\",\"Black/African\",\"20230707\",\"20011202\",\"\",\"N\",\"N\",\"N\",\"N\",\"N\",\"N\",\"\",\"119\",\"Roebuck Bethlehem\",\"\",\"031\",\"12\",\"01\",\"06\",\"\",\"04\",\"Active\",\"\",\"";
+        var row = @"""First Name"", ""Last Name"", ""Address
+""";
         
         var result = splitter.SplitRow(row);
         
-        Assert.Equal(40, result.Length);
+        Assert.Equal("First Name", result[0]);
+        Assert.Equal("Last Name", result[1]);
+        Assert.Equal(@"Address
+", result[2]);
     }
 }

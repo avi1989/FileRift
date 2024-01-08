@@ -12,7 +12,8 @@ public class FixedWidthFileDataReader : FileRiftDataReader
             new StreamReader(fileName),
             false,
             allowedDateFormats,
-            new FixedWithRowSplitter(columnLengths))
+            new FixedWithRowSplitter(columnLengths),
+            null)
     {
     }
 

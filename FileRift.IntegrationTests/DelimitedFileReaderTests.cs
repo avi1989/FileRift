@@ -157,4 +157,70 @@ public class DelimitedFileReaderTests
         Assert.Equal(22, results[1].Age);
         Assert.False(results[1].IsStudent);
     }
+    
+    [Fact]
+    public void Read_Should_HandleNewLinesIfEnclosed_UnixFormat()
+    {
+        string fileName = "CsvWithNewlinesInRow.csv";
+        var pathToFile = Path.Join(_basePath, "Files", fileName);
+        var classMap = new ClassMap<Person>();
+        classMap.AddColumnMap("FirstName", x => x.FirstName)
+            .AddColumnMap("LastName", x => x.LastName)
+            .AddColumnMap("Age", x => x.Age)
+            .AddColumnMap("IsStudent", x => x.IsStudent)
+            .AddColumnMap("Id", x => x.Id);
+
+        var fileReader = FileRiftBuilder.BuildDelimitedReader(pathToFile)
+            .HasHeaders()
+            .WithDelimiter(',')
+            .WithDateFormats("MM/dd/yyyy", "yyyy-MM-dd")
+            .WithEscapeCharacter('\"')
+            .WithTrimmedData()
+            .Build(classMap);
+        // var fileReader = new DelimitedFileReader<Person>(pathToFile, true, ',', '\"', classMap, true);
+
+        var results = fileReader.Read().ToList();
+        Assert.Equal(2, results.Count);
+
+        Assert.Equal(Guid.Parse("cd0cf662-9983-4152-8230-2a6f225ad985"), results[0].Id);
+        Assert.Equal("John", results[0].FirstName);
+        Assert.Equal("Doe", results[0].LastName);
+        Assert.Equal(25, results[0].Age);
+        Assert.True(results[0].IsStudent);
+        
+        Assert.Equal("Mary\nDoe", results[1].LastName);
+    }
+    
+    [Fact]
+    public void Read_Should_HandleNewLinesIfEnclosed_DosFormat()
+    {
+        string fileName = "CsvWithNewlinesInRowWindows.csv";
+        var pathToFile = Path.Join(_basePath, "Files", fileName);
+        var classMap = new ClassMap<Person>();
+        classMap.AddColumnMap("FirstName", x => x.FirstName)
+            .AddColumnMap("LastName", x => x.LastName)
+            .AddColumnMap("Age", x => x.Age)
+            .AddColumnMap("IsStudent", x => x.IsStudent)
+            .AddColumnMap("Id", x => x.Id);
+
+        var fileReader = FileRiftBuilder.BuildDelimitedReader(pathToFile)
+            .HasHeaders()
+            .WithDelimiter(',')
+            .WithDateFormats("MM/dd/yyyy", "yyyy-MM-dd")
+            .WithEscapeCharacter('\"')
+            .WithTrimmedData()
+            .Build(classMap);
+        // var fileReader = new DelimitedFileReader<Person>(pathToFile, true, ',', '\"', classMap, true);
+
+        var results = fileReader.Read().ToList();
+        Assert.Equal(2, results.Count);
+
+        Assert.Equal(Guid.Parse("cd0cf662-9983-4152-8230-2a6f225ad985"), results[0].Id);
+        Assert.Equal("John", results[0].FirstName);
+        Assert.Equal("Doe", results[0].LastName);
+        Assert.Equal(25, results[0].Age);
+        Assert.True(results[0].IsStudent);
+        
+        Assert.Equal("Mary\r\nDoe", results[1].LastName);
+    }
 }

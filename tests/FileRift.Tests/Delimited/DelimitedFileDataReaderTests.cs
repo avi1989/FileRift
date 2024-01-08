@@ -1,4 +1,6 @@
-﻿using FileRift.Contracts;
+﻿using System.Diagnostics;
+using System.Text;
+using FileRift.Contracts;
 using FileRift.Delimited;
 using NSubstitute;
 
@@ -19,7 +21,7 @@ public class DelimitedFileDataReaderTests : IDisposable
     {
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!).ReturnsForAnyArgs(new string[] { });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         var r = sut.Read();
         Assert.True(r);
     }
@@ -29,7 +31,7 @@ public class DelimitedFileDataReaderTests : IDisposable
     {
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!).ReturnsForAnyArgs(new string[] { });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
         sut.Read();
         var r = sut.Read();
@@ -38,11 +40,32 @@ public class DelimitedFileDataReaderTests : IDisposable
     }
 
     [Fact]
+    public void Read_ShouldAllow_MultipleLinesForARowIfEscaped()
+    {
+        var csv = @"cd0cf662-9983-4152-8230-2a6f225ad985, John, Doe, 25, true, ""John
+""
+b3436c0e-7eb4-4620-b9eb-7890c3462fbe, Jane, ""Mary Doe"", 22, false, """"
+";
+        var rowSplitter = Substitute.For<IRowSplitter>();
+        rowSplitter.SplitRow(default!).ReturnsForAnyArgs(new string[] { });
+        var memoryStream = new MemoryStream(Encoding.UTF8.GetBytes(csv));
+        using var sut = new DelimitedFileDataReader(memoryStream, false, rowSplitter, '\"');
+        int rowCount = 0;
+        while (sut.Read())
+        {
+            rowCount++;
+        }
+        
+        Assert.Equal(2, rowCount);
+        
+    }
+    
+    [Fact]
     public void Constructor_SetsFieldCount_IfHeadersPresent()
     {
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!).ReturnsForAnyArgs(new string[] { "123", "123" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         Assert.Equal(2, sut.FieldCount);
     }
 
@@ -51,7 +74,7 @@ public class DelimitedFileDataReaderTests : IDisposable
     {
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!).ReturnsForAnyArgs(new string[] { "123", "123" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter, '"');
         Assert.Equal(-1, sut.FieldCount);
     }
 
@@ -60,7 +83,7 @@ public class DelimitedFileDataReaderTests : IDisposable
     {
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!).ReturnsForAnyArgs(new string[] { "1", "2", "3" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
 
         sut.Read();
         Assert.Equal("2", sut[1]);
@@ -71,7 +94,7 @@ public class DelimitedFileDataReaderTests : IDisposable
     {
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!).ReturnsForAnyArgs(new string[] { "1", "true", "false" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
 
         Assert.True(sut.GetBoolean(1));
@@ -83,7 +106,7 @@ public class DelimitedFileDataReaderTests : IDisposable
     {
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!).ReturnsForAnyArgs(new string[] { "1", "2020-02-01", "false" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
         Assert.Equal(new DateTime(2020, 2, 1), sut.GetDateTime(1));
     }
@@ -93,7 +116,7 @@ public class DelimitedFileDataReaderTests : IDisposable
     {
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!).ReturnsForAnyArgs(new string[] { "1", "18_09_2001", "false" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter,
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"',
             new List<string>() { "dd_MM_yyyy" });
         sut.Read();
         Assert.Equal(new DateTime(2001, 9, 18), sut.GetDateTime(1));
@@ -104,7 +127,7 @@ public class DelimitedFileDataReaderTests : IDisposable
     {
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!).ReturnsForAnyArgs(new string[] { "13.3", "2020-02-01", "false" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
         Assert.Equal(13.3M, sut.GetDecimal(0));
     }
@@ -114,7 +137,7 @@ public class DelimitedFileDataReaderTests : IDisposable
     {
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!).ReturnsForAnyArgs(new string[] { "13.3", "2020-02-01", "false" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
         Assert.Equal(13.3F, sut.GetFloat(0));
     }
@@ -124,7 +147,7 @@ public class DelimitedFileDataReaderTests : IDisposable
     {
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!).ReturnsForAnyArgs(new string[] { "13.3", "2020-02-01", "false" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
         Assert.Equal(13.3, sut.GetDouble(0));
     }
@@ -134,7 +157,7 @@ public class DelimitedFileDataReaderTests : IDisposable
     {
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!).ReturnsForAnyArgs(new string[] { "13", "2020-02-01", "false" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
         Assert.Equal(13, sut.GetInt16(0));
     }
@@ -144,7 +167,7 @@ public class DelimitedFileDataReaderTests : IDisposable
     {
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!).ReturnsForAnyArgs(new string[] { "13", "2020-02-01", "false" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
         Assert.Equal(13, sut.GetInt32(0));
     }
@@ -154,7 +177,7 @@ public class DelimitedFileDataReaderTests : IDisposable
     {
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!).ReturnsForAnyArgs(new string[] { "13", "2020-02-01", "false" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
         Assert.Equal(13, sut.GetInt64(0));
     }
@@ -164,7 +187,7 @@ public class DelimitedFileDataReaderTests : IDisposable
     {
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!).ReturnsForAnyArgs(new string[] { "13", "A", "false" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
 
         Assert.Throws<FormatException>(() => { sut.GetInt16(1); });
@@ -175,7 +198,7 @@ public class DelimitedFileDataReaderTests : IDisposable
     {
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!).ReturnsForAnyArgs(new string[] { "13", "A", "false" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
 
         Assert.Throws<FormatException>(() => { sut.GetInt32(1); });
@@ -186,7 +209,7 @@ public class DelimitedFileDataReaderTests : IDisposable
     {
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!).ReturnsForAnyArgs(new string[] { "13", "A", "false" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
 
         Assert.Throws<FormatException>(() => { sut.GetInt64(1); });
@@ -197,7 +220,7 @@ public class DelimitedFileDataReaderTests : IDisposable
     {
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!).ReturnsForAnyArgs(new string[] { "13", "A", "false" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
 
         Assert.Throws<FormatException>(() => { sut.GetFloat(1); });
@@ -208,7 +231,7 @@ public class DelimitedFileDataReaderTests : IDisposable
     {
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!).ReturnsForAnyArgs(new string[] { "13", "A", "false" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
 
         Assert.Throws<FormatException>(() => { sut.GetDouble(1); });
@@ -219,7 +242,7 @@ public class DelimitedFileDataReaderTests : IDisposable
     {
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!).ReturnsForAnyArgs(new string[] { "13", "A", "false" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
 
         Assert.Throws<FormatException>(() => { sut.GetDecimal(1); });
@@ -230,7 +253,7 @@ public class DelimitedFileDataReaderTests : IDisposable
     {
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!).ReturnsForAnyArgs(new string[] { "13", "A", "false" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
 
         Assert.Throws<FormatException>(() => { sut.GetDateTime(1); });
@@ -246,7 +269,7 @@ public class DelimitedFileDataReaderTests : IDisposable
         rowSplitter.SplitRow(default!)
             .ReturnsForAnyArgs(new string[] { "firstName", "lastName", "age" },
                 new string[] { firstName, lastName, age });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
         Assert.Equal(firstName, sut["firstName"]);
         Assert.Equal(lastName, sut["lastName"]);
@@ -263,7 +286,7 @@ public class DelimitedFileDataReaderTests : IDisposable
         rowSplitter.SplitRow(default!)
             .ReturnsForAnyArgs(new string[] { "firstName", "lastName", "age" },
                 new string[] { firstName, lastName, age });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter, '"');
         sut.Read();
         Assert.Throws<InvalidOperationException>(() => sut["firstName"]);
     }
@@ -278,7 +301,7 @@ public class DelimitedFileDataReaderTests : IDisposable
         rowSplitter.SplitRow(default!)
             .ReturnsForAnyArgs(new string[] { "firstName", "lastName", "age" },
                 new string[] { firstName, lastName, age });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
         Assert.Throws<ArgumentException>(() => sut["invalidColumn"]);
     }
@@ -293,7 +316,7 @@ public class DelimitedFileDataReaderTests : IDisposable
         rowSplitter.SplitRow(default!)
             .ReturnsForAnyArgs(new string[] { "firstName", "lastName", "age" },
                 new string[] { firstName, lastName, age });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
         Assert.Equal(0, sut.GetOrdinal("firstName"));
         Assert.Equal(1, sut.GetOrdinal("lastName"));
@@ -310,7 +333,7 @@ public class DelimitedFileDataReaderTests : IDisposable
         rowSplitter.SplitRow(default!)
             .ReturnsForAnyArgs(new string[] { "firstName", "lastName", "age" },
                 new string[] { firstName, lastName, age });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter, '"');
         sut.Read();
 
         Assert.Throws<InvalidOperationException>(() => { Assert.Equal(0, sut.GetOrdinal("firstName")); });
@@ -322,7 +345,7 @@ public class DelimitedFileDataReaderTests : IDisposable
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!)
             .ReturnsForAnyArgs(new string[] { "firstName", "lastName", "age" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
         Assert.False(sut.NextResult());
     }
@@ -333,7 +356,7 @@ public class DelimitedFileDataReaderTests : IDisposable
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!)
             .ReturnsForAnyArgs(new string[] { "firstName", "lastName", "age" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
         Assert.Equal(-1, sut.RecordsAffected);
     }
@@ -345,7 +368,7 @@ public class DelimitedFileDataReaderTests : IDisposable
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!)
             .ReturnsForAnyArgs(new string[] { "firstName", guid.ToString(), "age" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
         Assert.Equal(guid, sut.GetGuid(1));
     }
@@ -356,7 +379,7 @@ public class DelimitedFileDataReaderTests : IDisposable
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!)
             .ReturnsForAnyArgs(new string[] { "firstName", "lastName", "age" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
         Assert.Equal(1, sut.Depth);
     }
@@ -367,7 +390,7 @@ public class DelimitedFileDataReaderTests : IDisposable
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!)
             .ReturnsForAnyArgs(new string[] { "firstName", "lastName", "age" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
         Assert.Equal("firstName", sut.GetName(0));
         Assert.Equal("lastName", sut.GetName(1));
@@ -380,7 +403,7 @@ public class DelimitedFileDataReaderTests : IDisposable
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!)
             .ReturnsForAnyArgs(new string[] { "firstName", "lastName", "age" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter, '"');
         Assert.Throws<InvalidOperationException>(() => sut.GetName(0));
     }
 
@@ -389,7 +412,7 @@ public class DelimitedFileDataReaderTests : IDisposable
     {
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!).ReturnsForAnyArgs(new string[] { "13", "A", "false" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
 
         Assert.Equal('A', sut.GetChar(1));
@@ -400,7 +423,7 @@ public class DelimitedFileDataReaderTests : IDisposable
     {
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!).ReturnsForAnyArgs(new string[] { "13", "AB", "false" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
 
         Assert.Throws<InvalidOperationException>(() => { sut.GetChar(1); });
@@ -413,7 +436,7 @@ public class DelimitedFileDataReaderTests : IDisposable
     {
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!).ReturnsForAnyArgs(new string[] { "13", value, "false" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
 
         Assert.Equal('\0', sut.GetChar(1));
@@ -424,7 +447,7 @@ public class DelimitedFileDataReaderTests : IDisposable
     {
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!).ReturnsForAnyArgs(new string[] { "13", null, "false" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
 
         Assert.True(sut.IsDBNull(1));
@@ -435,7 +458,7 @@ public class DelimitedFileDataReaderTests : IDisposable
     {
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!).ReturnsForAnyArgs(new string[] { "13", "", "false" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
 
         Assert.False(sut.IsDBNull(1));
@@ -446,7 +469,7 @@ public class DelimitedFileDataReaderTests : IDisposable
     {
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!).ReturnsForAnyArgs(new string[] { "13", "", "false" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
 
         Assert.Equal(sut, sut.GetData(1));
     }
@@ -458,7 +481,7 @@ public class DelimitedFileDataReaderTests : IDisposable
 
         byte expected = 255;
         rowSplitter.SplitRow(default!).ReturnsForAnyArgs(new string[] { "13", expected.ToString(), "false" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
         Assert.Equal(expected, sut.GetByte(1));
     }
@@ -468,7 +491,7 @@ public class DelimitedFileDataReaderTests : IDisposable
     {
         var rowSplitter = Substitute.For<IRowSplitter>();
         rowSplitter.SplitRow(default!).ReturnsForAnyArgs(new string[] { "13", "24", "false" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
         var result = new string[3];
         sut.GetValues(result);
@@ -488,7 +511,7 @@ public class DelimitedFileDataReaderTests : IDisposable
         rowSplitter.SplitRow(default!)
             .ReturnsForAnyArgs(new string[] { "firstName", "lastName", "age" },
                 new string[] { firstName, lastName, age });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         var dataTable = sut.GetSchemaTable();
         Assert.Equal("firstName", dataTable.Columns[0].ColumnName);
         Assert.Equal("lastName", dataTable.Columns[1].ColumnName);
@@ -505,7 +528,7 @@ public class DelimitedFileDataReaderTests : IDisposable
         rowSplitter.SplitRow(default!)
             .ReturnsForAnyArgs(new string[] { "firstName", "lastName", "age" },
                 new string[] { firstName, lastName, age });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, false, rowSplitter, '"');
         Assert.Throws<InvalidOperationException>(() => { sut.GetSchemaTable(); });
     }
 
@@ -516,7 +539,7 @@ public class DelimitedFileDataReaderTests : IDisposable
         rowSplitter.SplitRow(default!)
             .ReturnsForAnyArgs(new string[] { "firstName", "lastName", "age" },
                 new string[] { "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "A", "A" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
 
         var result = new char[10];
@@ -531,7 +554,7 @@ public class DelimitedFileDataReaderTests : IDisposable
         rowSplitter.SplitRow(default!)
             .ReturnsForAnyArgs(new string[] { "firstName", "lastName", "age" },
                 new string[] { "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "A", "A" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
 
         var result = new char[10];
@@ -546,7 +569,7 @@ public class DelimitedFileDataReaderTests : IDisposable
         rowSplitter.SplitRow(default!)
             .ReturnsForAnyArgs(new string[] { "firstName", "lastName", "age" },
                 new string[] { "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "A", "A" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
 
         var result = new char[2];
@@ -561,7 +584,7 @@ public class DelimitedFileDataReaderTests : IDisposable
         rowSplitter.SplitRow(default!)
             .ReturnsForAnyArgs(new string[] { "firstName", "lastName", "age" },
                 new string[] { "ABCDEFGHIJKLMNOPQRSTUVWXYZ", "A", "A" });
-        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter);
+        using var sut = new DelimitedFileDataReader(this.MemoryStream, true, rowSplitter, '"');
         sut.Read();
 
         var result = new char[10];
