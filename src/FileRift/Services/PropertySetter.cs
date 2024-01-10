@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using System.Diagnostics;
+using System.Globalization;
 using System.Reflection;
 
 namespace FileRift.Services;
@@ -20,14 +21,37 @@ internal class PropertySetter<T> where T : class
     {
         var prop = _properties[propertyName];
 
-        if (prop.PropertyType == typeof(TValue))
+        var actualType = Nullable.GetUnderlyingType(prop.PropertyType);
+        bool isNullable = actualType != null;
+        if (value == null && isNullable)
+        {
+            // Here we know that the property we are setting is a nullable prop
+            // and that we are setting a null to it.
+            prop?.SetValue(data, null);
+            return;
+        }
+        else if (!isNullable)
+        {
+            actualType = prop.PropertyType;
+        }
+        
+        Debug.Assert(actualType != null);
+
+        if (actualType == typeof(TValue))
         {
             prop?.SetValue(data, value);
         }
         else
         {
-            var typeToConvert = prop.PropertyType;
-            var result = Convert.ChangeType(value, typeToConvert, CultureInfo.CurrentCulture);
+            object? result;
+            if (value == null)
+            {
+                result = Activator.CreateInstance(actualType);
+            }
+            else
+            {
+                result = Convert.ChangeType(value, actualType!, CultureInfo.CurrentCulture);
+            }
             prop?.SetValue(data, result);
         }
     }

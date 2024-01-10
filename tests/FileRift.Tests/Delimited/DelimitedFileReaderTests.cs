@@ -25,7 +25,7 @@ public class DelimitedFileReaderTests
 
         dataReader.GetString(0).Returns("John", "Jim");
         dataReader.GetString(1).Returns("Doe", "Seiger");
-        dataReader.GetInt32(2).Returns(12, 14);
+        dataReader.GetString(2).Returns("12", "14");
 
         var delimitedFileReader = new DelimitedFileReader<Test>(dataReader, classMap);
 
@@ -66,10 +66,10 @@ public class DelimitedFileReaderTests
         {
             delimitedFileReader.Read().ToList();
         });
-        
+
         Assert.Equal(2, exception.RowNumber);
     }
-    
+
     [Fact]
     public void Read_Should_ThrowAnExceptionWithLineNumber_IfReadingDataFailed_ByDefault()
     {
@@ -95,10 +95,10 @@ public class DelimitedFileReaderTests
         {
             delimitedFileReader.Read().ToList();
         });
-        
+
         Assert.Equal(2, exception.RowNumber);
     }
-    
+
     [Fact]
     public void Read_Should_NotThrowAnExceptionWithLineNumber_IfReadingDataFailed_IfRequested()
     {
@@ -115,14 +115,79 @@ public class DelimitedFileReaderTests
 
         dataReader.GetString(0).Returns(x => "John", x => throw new Exception());
         dataReader.GetString(1).Returns("Doe", "Dow");
-        dataReader.GetInt32(2).Returns(12, 14);
+        dataReader.GetString(2).Returns("12", "14");
         dataReader.CurrentRowNumber.Returns(2);
 
-        var delimitedFileReader = new DelimitedFileReader<Test>(dataReader, classMap, shouldIgnoreErrors: true);
+        var delimitedFileReader =
+            new DelimitedFileReader<Test>(dataReader, classMap, shouldIgnoreErrors: true);
 
         delimitedFileReader.Read().ToList();
         Assert.Equal(1, delimitedFileReader.Errors.Count);
         Assert.Equal(2, delimitedFileReader.Errors.First().RowNumber);
-        
+    }
+
+    [Fact]
+    public void Read_Should_BeHandleNullableValues()
+    {
+        var classMap = new ClassMap<TestWithNullableValues>();
+        classMap.AddColumnMap("First Name", x => x.FirstName)
+            .AddColumnMap("LName", x => x.LastName)
+            .AddColumnMap("Age", x => x.Age);
+
+        var dataReader = Substitute.For<IFileRiftDataReader>();
+        dataReader.Read().Returns(true, true, false);
+        dataReader.GetOrdinal("First Name").Returns(0);
+        dataReader.GetOrdinal("LName").Returns(1);
+        dataReader.GetOrdinal("Age").Returns(2);
+
+        dataReader.GetString(0).Returns("John", "Jim");
+        dataReader.GetString(1).Returns("Doe", "Seiger");
+        dataReader.GetString(2).Returns("12", "");
+
+        var delimitedFileReader =
+            new DelimitedFileReader<TestWithNullableValues>(dataReader, classMap);
+
+        var result = delimitedFileReader.Read().ToList();
+        Assert.Equal(2, result.Count);
+
+        Assert.Equal("John", result[0].FirstName);
+        Assert.Equal("Doe", result[0].LastName);
+        Assert.Equal(12, result[0].Age);
+
+        Assert.Equal("Jim", result[1].FirstName);
+        Assert.Equal("Seiger", result[1].LastName);
+        Assert.Null(result[1].Age);
+    }
+
+    [Fact]
+    public void Read_Should_SetDefaultRatherThanNullIfValueIsNullForNonNullableData()
+    {
+        var classMap = new ClassMap<Test>();
+        classMap.AddColumnMap("First Name", x => x.FirstName)
+            .AddColumnMap("LName", x => x.LastName)
+            .AddColumnMap("Age", x => x.Age);
+
+        var dataReader = Substitute.For<IFileRiftDataReader>();
+        dataReader.Read().Returns(true, true, false);
+        dataReader.GetOrdinal("First Name").Returns(0);
+        dataReader.GetOrdinal("LName").Returns(1);
+        dataReader.GetOrdinal("Age").Returns(2);
+
+        dataReader.GetString(0).Returns("John", "Jim");
+        dataReader.GetString(1).Returns("Doe", "Seiger");
+        dataReader.GetString(2).Returns("12", "");
+
+        var delimitedFileReader = new DelimitedFileReader<Test>(dataReader, classMap);
+
+        var result = delimitedFileReader.Read().ToList();
+        Assert.Equal(2, result.Count);
+
+        Assert.Equal("John", result[0].FirstName);
+        Assert.Equal("Doe", result[0].LastName);
+        Assert.Equal(12, result[0].Age);
+
+        Assert.Equal("Jim", result[1].FirstName);
+        Assert.Equal("Seiger", result[1].LastName);
+        Assert.Equal(0, result[1].Age);
     }
 }

@@ -38,20 +38,20 @@ public class ClassMap<T> : IClassMap
         return AddColumnMap(columnName, expression);
     }
     
-    public ClassMap<T> AddColumnMap(string columnName, string propertyName, string propertyType)
+    public ClassMap<T> AddColumnMap(string columnName, string propertyName, Type propertyType)
     {
         var columnMapping = new ColumnMapping(columnName, propertyName, propertyType);
         _columnMappings.Add(columnMapping);
         return this;
     }
 
-    private string GetPropertyType(Expression<Func<T, object?>> expression)
+    private Type GetPropertyType(Expression<Func<T, object?>> expression)
     {
         var propertyName = GetPropertyName(expression);
         var propertyInfo = _properties[propertyName];
         Debug.Assert(propertyInfo?.PropertyType?.FullName != null, "propertyInfo != null");
 
-        return propertyInfo.PropertyType.FullName;
+        return propertyInfo.PropertyType;
     }
 
     private static string GetPropertyName(Expression<Func<T, object?>> expression)

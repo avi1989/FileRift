@@ -16,4 +16,14 @@ public class PropertySetterTests
         Assert.Equal("John", test.FirstName);
         Assert.Equal(5, test.Age);
     }
+
+    [Fact]
+    public void Should_SetNullableProperty()
+    {
+        var test = new TestWithNullableValues();
+        var propertySetter = new PropertySetter<TestWithNullableValues>();
+        object value = 5;
+        propertySetter.SetValue(test, "Age", value);
+        Assert.Equal(5, test.Age);
+    }
 }

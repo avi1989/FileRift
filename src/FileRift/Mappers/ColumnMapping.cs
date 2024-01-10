@@ -1,13 +1,13 @@
 ﻿namespace FileRift.Mappers;
 
-public class ColumnMapping(string columnName, string propertyName, string dataType)
+public class ColumnMapping(string columnName, string propertyName, Type dataType)
     : IEquatable<ColumnMapping>
 {
     public string ColumnName { get; } = columnName;
 
     public string PropertyName { get; } = propertyName;
 
-    public string DataType { get; } = dataType;
+    public Type DataType { get; } = dataType;
 
     public bool Equals(ColumnMapping? other)
     {
