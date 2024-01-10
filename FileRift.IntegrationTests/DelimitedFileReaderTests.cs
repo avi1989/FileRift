@@ -56,24 +56,21 @@ public class DelimitedFileReaderTests
     public void Read_ShouldAutoConfigureAndHandleClassMap()
     {
         var pathToFile = Path.Join(_basePath, "Files", "CsvWithHeader.csv");
-        var fileReader = FileRiftBuilder.BuildDelimitedReader(pathToFile)
-            .HasHeaders()
-            .WithAutoMap(true, false)
-            .AutoConfigure()
-            .Build<Person>();
+        var fileReader = FileRiftBuilder.BuildDelimitedReader(pathToFile).Defaults
+            .BuildAutoConfiguredReader<Person>();
         
         var results = fileReader.Read().ToList();
         Assert.Equal(2, results.Count);
 
         Assert.Equal(Guid.Parse("cd0cf662-9983-4152-8230-2a6f225ad985"), results[0].Id);
-        Assert.Equal(" John", results[0].FirstName);
-        Assert.Equal(" Doe", results[0].LastName);
+        Assert.Equal("John", results[0].FirstName);
+        Assert.Equal("Doe", results[0].LastName);
         Assert.Equal(25, results[0].Age);
         Assert.True(results[0].IsStudent);
 
         Assert.Equal(Guid.Parse("b3436c0e-7eb4-4620-b9eb-7890c3462fbe"), results[1].Id);
-        Assert.Equal(" Jane", results[1].FirstName);
-        Assert.Equal(" Mary Doe", results[1].LastName);
+        Assert.Equal("Jane", results[1].FirstName);
+        Assert.Equal("Mary Doe", results[1].LastName);
         Assert.Equal(22, results[1].Age);
         Assert.False(results[1].IsStudent);
     }
