@@ -14,7 +14,7 @@ public class TypedFileReader<T>(
     private readonly PropertySetter<T> _propertySetter = new();
 
     private readonly List<ReadError> _errors = new();
-    
+
     private CultureInfo _provider = CultureInfo.InvariantCulture;
 
     public IFileRiftDataReader DataReader => reader;
@@ -24,7 +24,8 @@ public class TypedFileReader<T>(
     protected Dictionary<Type, Func<int, object?>> DataTypeReaders => new()
     {
         { typeof(string), ordinal => reader.GetString(ordinal) },
-        { typeof(short), ordinal =>
+        {
+            typeof(short), ordinal =>
             {
                 var value = reader.GetString(ordinal);
 
@@ -36,7 +37,8 @@ public class TypedFileReader<T>(
                 return short.Parse(value, CultureInfo.InvariantCulture);
             }
         },
-        { typeof(int), ordinal =>
+        {
+            typeof(int), ordinal =>
             {
                 var value = reader.GetString(ordinal);
 
@@ -48,7 +50,8 @@ public class TypedFileReader<T>(
                 return int.Parse(value, CultureInfo.InvariantCulture);
             }
         },
-        { typeof(long), ordinal =>
+        {
+            typeof(long), ordinal =>
             {
                 var value = reader.GetString(ordinal);
 
@@ -60,7 +63,8 @@ public class TypedFileReader<T>(
                 return long.Parse(value, CultureInfo.InvariantCulture);
             }
         },
-        { typeof(bool), ordinal =>
+        {
+            typeof(bool), ordinal =>
             {
                 var value = reader.GetString(ordinal);
 
@@ -72,7 +76,8 @@ public class TypedFileReader<T>(
                 return bool.Parse(value);
             }
         },
-        { typeof(float), ordinal =>
+        {
+            typeof(float), ordinal =>
             {
                 var value = reader.GetString(ordinal);
 
@@ -84,7 +89,8 @@ public class TypedFileReader<T>(
                 return float.Parse(value);
             }
         },
-        { typeof(double), ordinal =>
+        {
+            typeof(double), ordinal =>
             {
                 var value = reader.GetString(ordinal);
 
@@ -93,10 +99,11 @@ public class TypedFileReader<T>(
                     return null;
                 }
 
-                return double.Parse(value); 
+                return double.Parse(value);
             }
         },
-        { typeof(decimal), ordinal =>
+        {
+            typeof(decimal), ordinal =>
             {
                 var value = reader.GetString(ordinal);
 
@@ -105,10 +112,11 @@ public class TypedFileReader<T>(
                     return null;
                 }
 
-                return decimal.Parse(value); 
+                return decimal.Parse(value);
             }
         },
-        { typeof(Guid), ordinal =>
+        {
+            typeof(Guid), ordinal =>
             {
                 var value = reader.GetString(ordinal);
 
@@ -117,12 +125,13 @@ public class TypedFileReader<T>(
                     return null;
                 }
 
-                return Guid.Parse(value); 
+                return Guid.Parse(value);
             }
         },
         { typeof(char), ordinal => reader.GetChar(ordinal) },
         { typeof(byte), ordinal => reader.GetByte(ordinal) },
-        { typeof(DateTime), ordinal =>
+        {
+            typeof(DateTime), ordinal =>
             {
                 var value = reader.GetString(ordinal);
 
@@ -130,7 +139,7 @@ public class TypedFileReader<T>(
                 {
                     return null;
                 }
-                
+
                 if (reader.AllowedDateFormats.Length != 0)
                 {
                     CultureInfo provider = CultureInfo.InvariantCulture;
@@ -142,86 +151,62 @@ public class TypedFileReader<T>(
         },
     };
 
-
     public IEnumerable<T> Read()
     {
         while (reader.Read())
         {
             T res = new T();
-
-            try
+            var headers = reader.Headers!.ToList();
+            foreach (var header in headers)
             {
-                foreach (var item in map.ColumnMappings)
+                var column = map.GetColumnMapping(header!);
+                if (column == null)
                 {
-                    int ordinal;
-                    try
-                    {
-                        ordinal = reader.GetOrdinal(item.ColumnName);
-
-                        if (ordinal == -1)
-                        {
-                            continue;
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new RowReadException(reader.CurrentRowNumber,
-                                                   reader.CurrentRowRaw,
-                                                   ex);
-                    }
-
-                    object? typedValue;
-                    var type = item.DataType;
-                    var underlyingType = Nullable.GetUnderlyingType(type);
-
-                    if (underlyingType != null)
-                    {
-                        type = underlyingType;
-                    }
-
-                    if (DataTypeReaders.TryGetValue(type, out var readerFunc))
-                    {
-                        try
-                        {
-                            // If we have a nullable object, we should be able to separate 
-                            typedValue = readerFunc(ordinal);
-                        }
-                        catch (Exception e)
-                        {
-                            throw new RowReadException(
-                                reader.CurrentRowNumber,
-                                reader.CurrentRowRaw,
-                                $"Unable to get property {item.ColumnName} with type {item.DataType}",
-                                e);
-                        }
-                    }
-                    else
-                    {
-                        throw new RowReadException(
-                            reader.CurrentRowNumber,
-                            reader.CurrentRowRaw,
-                            $"Unable to set property {item.ColumnName} with type {item.DataType}",
-                            null);
-                    }
-
-                    // // var value = reader.GetString(ordinal);
-                    _propertySetter.SetValue(res, item.PropertyName, typedValue);
-                }
-            }
-            catch (Exception e)
-            {
-                if (ignoreErrors)
-                {
-                    _errors.Add(new (reader.CurrentRowNumber, reader.CurrentRowRaw, e));
                     continue;
                 }
-                else
+
+                try
                 {
-                    throw;
+                    int ordinal = reader.GetOrdinal(header!);
+                    object? value = this.GetValue(ordinal, column);
+                    _propertySetter.SetValue(res, column.PropertyName, value);
+                }
+                catch (Exception e)
+                {
+                    if (ignoreErrors)
+                    {
+                        _errors.Add(new(reader.CurrentRowNumber, reader.CurrentRowRaw, e));
+                        continue;
+                    }
+
+                    throw new RowReadException(reader.CurrentRowNumber, reader.CurrentRowRaw, e);
                 }
             }
 
             yield return res;
         }
+    }
+
+    private object? GetValue(int ordinal, ColumnMapping item)
+    {
+        object? typedValue;
+        var type = item.DataType;
+        var underlyingType = Nullable.GetUnderlyingType(type);
+
+        if (underlyingType != null)
+        {
+            type = underlyingType;
+        }
+
+        if (DataTypeReaders.TryGetValue(type, out var readerFunc))
+        {
+            typedValue = readerFunc(ordinal);
+        }
+        else
+        {
+            throw new InvalidOperationException($"Mapper not found for type {type.FullName}");
+        }
+
+        return typedValue;
     }
 }

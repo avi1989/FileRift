@@ -12,6 +12,9 @@ public class DelimitedFileReaderBuilder(string pathToFile)
     private readonly ClassMaps _classMaps = new ClassMaps();
     private bool _nullsInsteadOfBlanks = false;
     private bool _shouldIgnoreErrors;
+    private bool _shouldAutoMap = false;
+    private bool _shouldIgnoreCase;
+    private bool _shouldIgnoreSpecialCharacters;
 
     public DefaultDelimitedFileType Defaults => new DefaultDelimitedFileType(pathToFile);
 
@@ -36,6 +39,14 @@ public class DelimitedFileReaderBuilder(string pathToFile)
     public DelimitedFileReaderBuilder WithTrimmedData()
     {
         _shouldAutoTrim = true;
+        return this;
+    }
+
+    public DelimitedFileReaderBuilder WithAutoMap(bool ignoreCase, bool ignoreSpecialCharacters)
+    {
+        _shouldAutoMap = true;
+        _shouldIgnoreCase = ignoreCase;
+        _shouldIgnoreSpecialCharacters = ignoreSpecialCharacters;
         return this;
     }
 
@@ -123,6 +134,12 @@ public class DelimitedFileReaderBuilder(string pathToFile)
             throw new InvalidOperationException("Cannot build typed data reader without headers");
         }
 
+        if (_shouldAutoMap)
+        {
+            classMap =
+                new AutoClassMap<T>(classMap, _shouldIgnoreCase, _shouldIgnoreSpecialCharacters);
+        }
+
         return Build(
             delimiter: _delimiter.Value,
             escapeCharacter: _escapeCharacter,
@@ -148,8 +165,15 @@ public class DelimitedFileReaderBuilder(string pathToFile)
 
         if (classMap == null)
         {
-            throw new InvalidOperationException(
-                $"Class map not found for {typeof(T).FullName}. Either register it or invoke build with the class map");
+            if (_shouldAutoMap)
+            {
+                classMap = new AutoClassMap<T>(_shouldIgnoreCase, _shouldIgnoreSpecialCharacters);
+            }
+            else
+            {
+                throw new InvalidOperationException(
+                    $"Class map not found for {typeof(T).FullName}. Either register it or invoke build with the class map");
+            }
         }
 
         return Build(_delimiter.Value,
@@ -190,19 +214,52 @@ public class DelimitedFileReaderBuilder(string pathToFile)
 
     public class DefaultDelimitedFileType(string pathToFile)
     {
+        public DelimitedFileReader<T> BuildCsvReader<T>(
+            bool ignoreHeaderCase = true,
+            bool ignoreSpecialCharactersInHeader = true) where T : class, new()
+        {
+            var autoMap = new AutoClassMap<T>(ignoreHeaderCase, ignoreSpecialCharactersInHeader);
+            return new DelimitedFileReader<T>(
+                pathToFile,
+                true,
+                ',',
+                '\"',
+                autoMap,
+                true,
+                true,
+                false);
+        }
+
+        public DelimitedFileReader<T> BuildAutoConfiguredReader<T>(
+            int rowsToReadForConfiguration = 20,
+            bool ignoreHeaderCase = true,
+            bool ignoreSpecialCharactersInHeader = true) where T : class, new()
+        {
+            using var streamReader = new StreamReader(pathToFile);
+            var fileTypeDetector = new DelimitedFileTypeDetector();
+            var config = fileTypeDetector.GetFileSettings(streamReader, rowsToReadForConfiguration);
+
+            if (config == null)
+            {
+                throw new InvalidOperationException(
+                    $"Unable to autoconfigure data for file {pathToFile}");
+            }
+
+            var autoMap = new AutoClassMap<T>(ignoreHeaderCase, ignoreSpecialCharactersInHeader);
+            return new DelimitedFileReader<T>(
+                pathToFile,
+                true,
+                config.Delimiter,
+                config.EscapeCharacter,
+                autoMap,
+                true,
+                true,
+                false);
+        }
+
         public DelimitedFileDataReader BuildCsvDataReader(bool hasHeaders)
         {
             return new DelimitedFileDataReader(pathToFile, hasHeaders, ',', '\"', true);
-        }
-
-        public DelimitedFileDataReader BuildPsvDataReader(bool hasHeaders)
-        {
-            return new DelimitedFileDataReader(pathToFile, hasHeaders, '|', '\"', true);
-        }
-
-        public DelimitedFileDataReader BuildTsvDataReader(bool hasHeaders)
-        {
-            return new DelimitedFileDataReader(pathToFile, hasHeaders, '|', null, true);
         }
     }
 }

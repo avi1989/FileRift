@@ -10,7 +10,7 @@ public class ClassMapTests
     {
         var classMap = new ClassMap<Test>();
         classMap.AddColumnMap("Test", c => c.FirstName);
-        Assert.Single(classMap.ColumnMappings);
+        Assert.Single(classMap.SavedColumnMappings);
     }
 
     [Fact]
@@ -28,5 +28,10 @@ public class ClassMapTests
     {
         var classMap = new ClassMap<Test>();
         Assert.Equal(typeof(Test).FullName, classMap.Type.FullName);
+    }
+
+    public void GenerateDefaults_ShouldGenerateClassMaps()
+    {
+        
     }
 }

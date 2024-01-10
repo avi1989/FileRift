@@ -6,6 +6,8 @@ public class Test
 
     public string LastName { get; set; }
     public int Age { get; set; }
+    
+    public string Test_Underscore { get; set; }
 
     public InternalTest Test2 { get; set; } = new InternalTest();
 }

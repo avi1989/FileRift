@@ -7,25 +7,41 @@ namespace FileRift.Mappers;
 
 public class ClassMap<T> : IClassMap
 {
-    private readonly ColumnMappings _columnMappings;
-    private readonly Dictionary<string, PropertyInfo> _properties;
+    private ColumnMappings _columnMappings;
 
-    public ClassMap()
+    public ClassMap(bool ignoreCase = false)
     {
-        _columnMappings = new();
-
         var properties = Type.GetProperties(BindingFlags.Instance | BindingFlags.Public);
-        _properties = new();
+
+        if (ignoreCase)
+        {
+            Properties =
+                new Dictionary<string, PropertyInfo>(StringComparer.InvariantCultureIgnoreCase);
+            _columnMappings = new(StringComparer.InvariantCultureIgnoreCase);
+        }
+        else
+        {
+            Properties = new();
+            _columnMappings = new();
+        }
+
+
         foreach (var propertyInfo in properties)
         {
-            _properties.Add(propertyInfo.Name, propertyInfo);
+            Properties.Add(propertyInfo.Name, propertyInfo);
         }
     }
 
-    public IReadOnlyCollection<ColumnMapping> ColumnMappings => _columnMappings;
+    protected Dictionary<string, PropertyInfo> Properties { get; }
+
+    public IReadOnlyCollection<ColumnMapping> SavedColumnMappings
+    {
+        get => _columnMappings;
+        protected init => _columnMappings = new ColumnMappings(value);
+    }
 
     public Type Type => typeof(T);
-    
+
     public ClassMap<T> AddColumnMap(string columnName, Expression<Func<T, object?>> expression)
     {
         var propertyName = GetPropertyName(expression);
@@ -37,7 +53,7 @@ public class ClassMap<T> : IClassMap
     {
         return AddColumnMap(columnName, expression);
     }
-    
+
     public ClassMap<T> AddColumnMap(string columnName, string propertyName, Type propertyType)
     {
         var columnMapping = new ColumnMapping(columnName, propertyName, propertyType);
@@ -45,10 +61,16 @@ public class ClassMap<T> : IClassMap
         return this;
     }
 
+    public virtual ColumnMapping? GetColumnMapping(string columnName)
+    {
+        _columnMappings.TryGetValue(columnName, out var columnMapping);
+        return columnMapping;
+    }
+
     private Type GetPropertyType(Expression<Func<T, object?>> expression)
     {
         var propertyName = GetPropertyName(expression);
-        var propertyInfo = _properties[propertyName];
+        var propertyInfo = Properties[propertyName];
         Debug.Assert(propertyInfo?.PropertyType?.FullName != null, "propertyInfo != null");
 
         return propertyInfo.PropertyType;
