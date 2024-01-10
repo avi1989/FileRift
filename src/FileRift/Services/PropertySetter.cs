@@ -44,7 +44,7 @@ internal class PropertySetter<T> where T : class
         else
         {
             object? result;
-            if (value == null)
+            if (value == null && actualType.IsPrimitive)
             {
                 result = Activator.CreateInstance(actualType);
             }

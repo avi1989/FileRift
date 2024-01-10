@@ -1,4 +1,5 @@
-﻿using FileRift.Services;
+﻿using Castle.Core.Logging;
+using FileRift.Services;
 using FileRift.Tests.Models;
 
 namespace FileRift.Tests.Services;
@@ -25,5 +26,15 @@ public class PropertySetterTests
         object value = 5;
         propertySetter.SetValue(test, "Age", value);
         Assert.Equal(5, test.Age);
+    }
+    
+    [Fact]
+    public void Should_SetNullToString()
+    {
+        var test = new TestWithNullableValues();
+        var propertySetter = new PropertySetter<TestWithNullableValues>();
+        object value = null;
+        propertySetter.SetValue(test, "FirstName", value);
+        Assert.Null(test.FirstName);
     }
 }

@@ -158,6 +158,37 @@ public class DelimitedFileReaderTests
         Assert.Equal("Seiger", result[1].LastName);
         Assert.Null(result[1].Age);
     }
+    
+    [Fact]
+    public void Read_Should_BeHandleNullableDates()
+    {
+        var classMap = new ClassMap<TestWithNullableValues>();
+        classMap.AddColumnMap("First Name", x => x.FirstName)
+            .AddColumnMap("LName", x => x.LastName)
+            .AddColumnMap("RegDate", x => x.RegistrationDate)
+            .AddColumnMap("Age", x => x.Age);
+
+        var dataReader = Substitute.For<IFileRiftDataReader>();
+        dataReader.Read().Returns(true, true, false);
+        dataReader.GetOrdinal("First Name").Returns(0);
+        dataReader.GetOrdinal("LName").Returns(1);
+        dataReader.GetOrdinal("Age").Returns(2);
+        dataReader.GetOrdinal("RegDate").Returns(3);
+
+        dataReader.GetString(0).Returns("John", "Jim");
+        dataReader.GetString(1).Returns("Doe", "Seiger");
+        dataReader.GetString(2).Returns("12", "");
+        dataReader.GetString(3).Returns("2020-01-01", "");
+
+        var delimitedFileReader =
+            new DelimitedFileReader<TestWithNullableValues>(dataReader, classMap);
+
+        var result = delimitedFileReader.Read().ToList();
+        Assert.Equal(2, result.Count);
+
+        Assert.Equal(new DateTime(2020, 1, 1), result[0].RegistrationDate);
+        Assert.Null(result[1].RegistrationDate);
+    }
 
     [Fact]
     public void Read_Should_SetDefaultRatherThanNullIfValueIsNullForNonNullableData()
@@ -189,5 +220,35 @@ public class DelimitedFileReaderTests
         Assert.Equal("Jim", result[1].FirstName);
         Assert.Equal("Seiger", result[1].LastName);
         Assert.Equal(0, result[1].Age);
+    }
+    
+    [Fact]
+    public void Read_Should_BeHandleNullableStrings()
+    {
+        var classMap = new ClassMap<TestWithNullableValues>();
+        classMap.AddColumnMap("First Name", x => x.FirstName)
+            .AddColumnMap("LName", x => x.LastName)
+            .AddColumnMap("RegDate", x => x.RegistrationDate)
+            .AddColumnMap("Age", x => x.Age);
+
+        var dataReader = Substitute.For<IFileRiftDataReader>();
+        dataReader.Read().Returns(true, false);
+        dataReader.GetOrdinal("First Name").Returns(0);
+        dataReader.GetOrdinal("LName").Returns(1);
+        dataReader.GetOrdinal("Age").Returns(2);
+        dataReader.GetOrdinal("RegDate").Returns(3);
+
+        dataReader.GetString(0).Returns("John");
+        dataReader.GetString(1).Returns(null as string);
+        dataReader.GetString(2).Returns("12");
+        dataReader.GetString(3).Returns("2020-01-01");
+
+        var delimitedFileReader =
+            new DelimitedFileReader<TestWithNullableValues>(dataReader, classMap);
+
+        var result = delimitedFileReader.Read().ToList();
+        Assert.Single(result);
+        Assert.Null(result[0].LastName);
+
     }
 }
