@@ -26,6 +26,9 @@ public class DelimitedFileReaderTests
         dataReader.GetString(0).Returns("John", "Jim");
         dataReader.GetString(1).Returns("Doe", "Seiger");
         dataReader.GetString(2).Returns("12", "14");
+        
+        dataReader.Headers.Returns(new List<string?>() { "First Name", "LName", "Age" });
+
 
         var delimitedFileReader = new DelimitedFileReader<Test>(dataReader, classMap);
 
@@ -59,6 +62,9 @@ public class DelimitedFileReaderTests
         dataReader.GetString(1).Returns("Doe", "Dow");
         dataReader.GetInt32(2).Returns(12, 14);
         dataReader.CurrentRowNumber.Returns(2);
+        
+        dataReader.Headers.Returns(new List<string?>() { "First Name", "LName", "Age" });
+
 
         var delimitedFileReader = new DelimitedFileReader<Test>(dataReader, classMap);
 
@@ -88,6 +94,9 @@ public class DelimitedFileReaderTests
         dataReader.GetString(1).Returns("Doe", "Dow");
         dataReader.GetInt32(2).Returns(12, 14);
         dataReader.CurrentRowNumber.Returns(2);
+        
+        dataReader.Headers.Returns(new List<string?>() { "First Name", "LName", "Age" });
+
 
         var delimitedFileReader = new DelimitedFileReader<Test>(dataReader, classMap);
 
@@ -117,6 +126,8 @@ public class DelimitedFileReaderTests
         dataReader.GetString(1).Returns("Doe", "Dow");
         dataReader.GetString(2).Returns("12", "14");
         dataReader.CurrentRowNumber.Returns(2);
+        
+        dataReader.Headers.Returns(new List<string?>() { "First Name", "LName", "Age" });
 
         var delimitedFileReader =
             new DelimitedFileReader<Test>(dataReader, classMap, shouldIgnoreErrors: true);
@@ -143,6 +154,9 @@ public class DelimitedFileReaderTests
         dataReader.GetString(0).Returns("John", "Jim");
         dataReader.GetString(1).Returns("Doe", "Seiger");
         dataReader.GetString(2).Returns("12", "");
+        
+        dataReader.Headers.Returns(new List<string?>() { "First Name", "LName", "Age" });
+
 
         var delimitedFileReader =
             new DelimitedFileReader<TestWithNullableValues>(dataReader, classMap);
@@ -174,6 +188,8 @@ public class DelimitedFileReaderTests
         dataReader.GetOrdinal("LName").Returns(1);
         dataReader.GetOrdinal("Age").Returns(2);
         dataReader.GetOrdinal("RegDate").Returns(3);
+
+        dataReader.Headers.Returns(new List<string?>() { "First Name", "LName", "Age", "RegDate" });
 
         dataReader.GetString(0).Returns("John", "Jim");
         dataReader.GetString(1).Returns("Doe", "Seiger");
@@ -207,6 +223,9 @@ public class DelimitedFileReaderTests
         dataReader.GetString(0).Returns("John", "Jim");
         dataReader.GetString(1).Returns("Doe", "Seiger");
         dataReader.GetString(2).Returns("12", "");
+        
+        dataReader.Headers.Returns(new List<string?>() { "First Name", "LName", "Age" });
+
 
         var delimitedFileReader = new DelimitedFileReader<Test>(dataReader, classMap);
 

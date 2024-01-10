@@ -27,6 +27,8 @@ public class FixedWidthReaderTests
         dataReader.GetString(1).Returns("Doe", "Seiger");
         dataReader.GetString(2).Returns("12", "14");
 
+        dataReader.Headers.Returns(new List<string?>() { "First Name", "LName", "Age" });
+
         var delimitedFileReader = new FixedWidthFileReader<Test>(dataReader, classMap);
 
         var result = delimitedFileReader.Read().ToList();
