@@ -47,6 +47,19 @@ public class DelimitedRowSplitter(
 
                 result.Add(colString);
 
+                if (i == row.Length - 1 &&
+                    currentChar == delimiter)
+                {
+                    if (shouldConvertWhitespaceToNulls)
+                    {
+                        result.Add(null);
+                    }
+                    else
+                    {
+                        result.Add("");
+                    }
+                }
+
                 start = i + 1;
 
                 if (row[i] == '\r' ||

@@ -213,4 +213,64 @@ public class DelimitedRowSplitterTests
         Assert.Equal(@"Address
 ", result[2]);
     }
+    
+    [Fact]
+    public void Should_HandleCommaAtTheEndAsAValue_WithoutEnclosingCharacter()
+    {
+        var splitter = new DelimitedRowSplitter(',', null, true, false);
+        var row = @"FirstName, LastName, Age,";
+        
+        var result = splitter.SplitRow(row);
+        Assert.Equal(4, result.Length);
+        
+        Assert.Equal("FirstName", result[0]);
+        Assert.Equal("LastName", result[1]);
+        Assert.Equal("Age", result[2]);
+        Assert.Equal("", result[3]);
+    }
+    
+    [Fact]
+    public void Should_HandleCommaAtTheEndAsAValue_WithoutEnclosingCharacter_AsNullIfRequested()
+    {
+        var splitter = new DelimitedRowSplitter(',', null, true, true);
+        var row = @"FirstName, LastName, Age,";
+        
+        var result = splitter.SplitRow(row);
+        Assert.Equal(4, result.Length);
+        
+        Assert.Equal("FirstName", result[0]);
+        Assert.Equal("LastName", result[1]);
+        Assert.Equal("Age", result[2]);
+        Assert.Null(result[3]);
+    }
+    
+    [Fact]
+    public void Should_HandleCommaAtTheEndAsAValue_WithEnclosingCharacter()
+    {
+        var splitter = new DelimitedRowSplitter(',', '\"', true, true);
+        var row = "\"FirstName\", \"LastName\", \"Age\",\"\"";
+        
+        var result = splitter.SplitRow(row);
+        Assert.Equal(4, result.Length);
+        
+        Assert.Equal("FirstName", result[0]);
+        Assert.Equal("LastName", result[1]);
+        Assert.Equal("Age", result[2]);
+        Assert.Equal("", result[3]);
+    }
+    
+    [Fact]
+    public void Should_HandleCommaAtTheEndAsAValue_WithEnclosingCharacterButNotOnLastBlock()
+    {
+        var splitter = new DelimitedRowSplitter(',', '\"', true, false);
+        var row = "\"FirstName\", \"LastName\", \"Age\",";
+        
+        var result = splitter.SplitRow(row);
+        Assert.Equal(4, result.Length);
+        
+        Assert.Equal("FirstName", result[0]);
+        Assert.Equal("LastName", result[1]);
+        Assert.Equal("Age", result[2]);
+        Assert.Equal("", result[3]);
+    }
 }
