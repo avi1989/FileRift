@@ -17,8 +17,28 @@ dotnet add FileRift
 
 ### Typed Reader
 
-FileRift provides a simple way to read CSV files and map them into a class using a fluent interface. Example usage:
+FileRift provides a simple way to read delimited files and map them into a class. Example usage:
 
+Take a look at the Csv file below.
+```
+Id,FIRST_NAME,LAST_NAME,AGE,IS_STUDENT,
+cd0cf662-9983-4152-8230-2a6f225ad985, John, Doe, 25, true
+b3436c0e-7eb4-4620-b9eb-7890c3462fbe, Jane, "Mary Doe", 22, false
+```
+
+This can be mapped into a class with the following code
+```csharp
+var reader = FileRiftBuilder.BuildDelimitedReader(pathToFile).Defaults.BuildAutoConfiguredReader<Person>();
+
+IEnumerable<Person> data = reader.Read();
+```
+That's it! The BuildAutoConfiguredReader method does a few things.
+1. It assumes that the file has a header.
+2. It scans the first 20 rows to try to understand the file type.
+3. It automatically generates a class map that will ignore casing, ignore underscores, spaces and hypens
+
+
+If you do not want the class mapper to be auto configured, you can do the following.
 ```csharp
 var classMap = new ClassMap<Person>();
 classMap.AddColumnMap("FirstName", x => x.FirstName)
@@ -192,9 +212,4 @@ var results = fileReader.Read().ToList();
 ```
 
 ## Roadmap
-
-- Perform AutoMapping for properties that match the property name exactly
 - Allow mapping into types that have a constructor with parameters.
-
-## Known Issues
-- FileRift currently has issues with nullable types like int?. I am working on fixing this.

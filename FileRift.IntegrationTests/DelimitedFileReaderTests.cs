@@ -56,7 +56,9 @@ public class DelimitedFileReaderTests
     public void Read_ShouldAutoConfigureAndHandleClassMap()
     {
         var pathToFile = Path.Join(_basePath, "Files", "CsvWithHeader.csv");
-        var fileReader = FileRiftBuilder.BuildDelimitedReader(pathToFile).Defaults
+        var fileReader = FileRiftBuilder
+            .BuildDelimitedReader(pathToFile)
+            .Defaults
             .BuildAutoConfiguredReader<Person>();
         
         var results = fileReader.Read().ToList();
