@@ -1,0 +1,24 @@
+on:
+  push:
+    branches: 
+      ["master", "test-actions"]
+  pull_request:
+    branches: 
+      ["master", "test-actions"]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v3
+      - name: "Setup Dotnet"
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 8.0.x
+      - name: Restore Dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --no-restore
+      - name: Test
+        run: dotnet test --no-build
+
