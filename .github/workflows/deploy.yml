@@ -21,9 +21,9 @@ jobs:
         - name: Restore Dependencies
           run: dotnet restore
         - name: Build
-          run: dotnet build --no-restore
+          run: dotnet build --no-restore --configuration Release
         - name: Test
-          run: dotnet test --no-build
+          run: dotnet test --no-build --configuration Release
         - name: Pack
           run: dotnet pack --configuration Release /p:Version=${VERSION} --no-build --output .
         - name: Push
