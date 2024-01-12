@@ -28,16 +28,21 @@ b3436c0e-7eb4-4620-b9eb-7890c3462fbe, Jane, "Mary Doe", 22, false
 
 This can be mapped into a class with the following code
 ```csharp
-var reader = FileRiftBuilder.BuildDelimitedReader(pathToFile).Defaults.BuildAutoConfiguredReader<Person>();
+var reader = FileRiftBuilder
+    .Delimited(pathToFile)
+    .AutoConfigure()
+    .Build<Person>();
 
 IEnumerable<Person> data = reader.Read();
 ```
+
+That's it!
 That's it! The BuildAutoConfiguredReader method does a few things.
 1. It assumes that the file has a header.
 2. It scans the first 20 rows to try to understand the file type.
 3. It automatically generates a class map that will ignore casing, ignore underscores, spaces and hypens
 
-
+## Explicit Configuration
 If you do not want the class mapper to be auto configured, you can do the following.
 ```csharp
 var classMap = new ClassMap<Person>();
@@ -48,20 +53,21 @@ classMap.AddColumnMap("FirstName", x => x.FirstName)
     .AddColumnMap("Id", x => x.Id);
 
 // Building the file reader
- var fileReader = FileReaderBuilder.BuildDelimitedReader(pathToFile)
-            .HasHeaders()
-            .AutoConfigure()
-            .Build(classMap);
+ var fileReader = FileReaderBuilder
+    .Delimited(pathToFile)
+    .HasHeaders()
+    .AutoConfigure()
+    .Build(classMap);
 
 // Reading the file
 IEnumerable<Person> results = fileReader.Read()
 ```
 
-Note that we are configuring the delimters or escape characters. FileRift
+Note that we are not configuring the delimters or escape characters. FileRift
 automatically reads the first 20 lines of the file and tries to detect the 
 delimiters and separators.
 
-#### Manual configuration
+### Configuring the Reader
 You can also choose to configure the reader manually. You can do that as described below.
 ```csharp
 // Setting up the class mapping
@@ -76,8 +82,7 @@ classMap.AddColumnMap("FirstName", x => x.FirstName)
  var fileReader = FileReaderBuilder.BuildDelimitedReader(pathToFile)
             .HasHeaders()
             .WithDelimiter(',')
-            .WithEscapeCharacter('\"')
-            .WithTrimmedData()
+            .WithQuote('\"')
             .Build(classMap);
 
 // Reading the file
@@ -93,8 +98,8 @@ FileRift also allows direct access to the underlying DataReader for more flexibi
 ```csharp
 
 using var reader = FileRiftBuilder
-    .BuildDelimitedReader(pathToFile)
-    .WithHeaders()
+    .Delimited(pathToFile)
+    .HasHeader()
     .AutoConfigure()
     .BuildDataReader():
 
@@ -126,7 +131,6 @@ classMap.AddColumnMap("FirstName", x => x.FirstName)
             .HasHeaders()
             .WithDelimiter('|')
             .WithDateFormats("MM/dd/yyyy", "yyyy-MM-dd")
-            .WithTrimmedData()
             .Build(classMap);
 
 ```
@@ -174,7 +178,7 @@ var columns = new List<FixedWidthColumnInfo>()
 };
 
 // var fileReader = new FixedWidthFileReader<Person>(pathToFile, columns, classMap);
-var fileReader = FileRiftBuilder.BuildFixedWidthReader(pathToFile)
+var fileReader = FileRiftBuilder.FixedWidth(pathToFile)
     .WithColumns(columns)
     .Build(classMap);
 
@@ -201,11 +205,11 @@ Now, you can read a file at any time without reconfiguring the ClassMap:
 
 ```csharp
  var pathToFile = Path.Join(_basePath, "Files", "CsvWithHeader.csv");
-var fileReader = FileRiftBuilder.BuildDelimitedReader(pathToFile)
+var fileReader = FileRiftBuilder
+    .Delimited(pathToFile)
     .HasHeaders()
     .WithDelimiter(',')
     .WithEscapeCharacter('\"')
-    .WithTrimmedData()
     .Build<Person>();
 
 var results = fileReader.Read().ToList();
@@ -213,3 +217,4 @@ var results = fileReader.Read().ToList();
 
 ## Roadmap
 - Allow mapping into types that have a constructor with parameters.
+- Add Documentation for ignoring line level errors and how to access the error log
