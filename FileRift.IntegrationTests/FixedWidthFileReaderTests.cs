@@ -40,7 +40,7 @@ public class FixedWidthFileReaderTests
         };
 
         // var fileReader = new FixedWidthFileReader<Person>(pathToFile, columns, classMap);
-        var fileReader = FileRiftBuilder.BuildFixedWidthReader(pathToFile)
+        var fileReader = FileRiftBuilder.FixedWidth(pathToFile)
             .WithColumns(columns)
             .Build(classMap);
 
@@ -82,7 +82,7 @@ public class FixedWidthFileReaderTests
         new ClassMaps().RegisterClassMap(classMap);
 
         // var fileReader = new FixedWidthFileReader<Person>(pathToFile, columns, classMap);
-        var fileReader = FileRiftBuilder.BuildFixedWidthReader(pathToFile)
+        var fileReader = FileRiftBuilder.FixedWidth(pathToFile)
             .WithColumns(columns)
             .Build<Person>();
 

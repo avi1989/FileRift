@@ -5,13 +5,28 @@ namespace FileRift;
 
 public static class FileRiftBuilder
 {
-    public static DelimitedFileReaderBuilder BuildDelimitedReader(string pathToFile)
+    public static DelimitedFileBuilder Csv(string filePath)
     {
-        return new DelimitedFileReaderBuilder(pathToFile);
+        return new DelimitedFileBuilder(filePath, ',', '"');
+    }
+    
+    public static DelimitedFileBuilder Psv(string filePath)
+    {
+        return new DelimitedFileBuilder(filePath, '|', '"');
+    }
+    
+    public static DelimitedFileBuilder Tsv(string filePath)
+    {
+        return new DelimitedFileBuilder(filePath, '\t', null);
     }
 
-    public static FixedWidthFileReaderBuilder BuildFixedWidthReader(string pathToFile)
+    public static DelimitedFileBuilder Delimited(string filePath)
     {
-        return new FixedWidthFileReaderBuilder(pathToFile);
+        return new DelimitedFileBuilder(filePath);
+    }
+
+    public static FixedWidthFileReaderBuilder FixedWidth(string filePath)
+    {
+        return new FixedWidthFileReaderBuilder(filePath);
     }
 }

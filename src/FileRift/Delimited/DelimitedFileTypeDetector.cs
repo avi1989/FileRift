@@ -48,4 +48,4 @@ public class DelimitedFileTypeDetector(
     }
 }
 
-public record DelimitedFileSettings(char Delimiter, char? EscapeCharacter);
+public record DelimitedFileSettings(char Delimiter, char? QuoteField);
