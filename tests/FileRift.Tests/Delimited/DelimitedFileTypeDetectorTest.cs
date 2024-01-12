@@ -24,7 +24,7 @@ public class DelimitedFileTypeDetectorTest
         var result = sut.GetFileSettings(input);
 
         Assert.Equal(delimiter, result.Delimiter);
-        Assert.Equal(escapeCharacter, result.EscapeCharacter);
+        Assert.Equal(escapeCharacter, result.QuoteField);
     }
 
     [Fact]
@@ -44,7 +44,7 @@ public class DelimitedFileTypeDetectorTest
         var result = sut.GetFileSettings(input);
 
         Assert.Equal(delimiter, result.Delimiter);
-        Assert.Equal(escapeCharacter, result.EscapeCharacter);
+        Assert.Equal(escapeCharacter, result.QuoteField);
     }
 
     [Fact]

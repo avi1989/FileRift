@@ -18,12 +18,11 @@ public class DelimitedFileDataReaderTests
     public void Should_Return_CorrectNumberOfRows()
     {
         var pathToFile = Path.Join(_basePath, "Files", "SmallerCsv.csv");
-        var fileReader = FileRiftBuilder.BuildDelimitedReader(pathToFile)
-            .HasHeaders()
+        var fileReader = FileRiftBuilder.Delimited(pathToFile)
+            .HasHeader()
             .WithDelimiter(',')
             .WithDateFormats("MM/dd/yyyy", "yyyy-MM-dd")
-            .WithEscapeCharacter('\"')
-            .WithTrimmedData()
+            .WithQuote('\"')
             .BuildDataReader();
 
         int rowCount = 0;

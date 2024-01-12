@@ -27,14 +27,12 @@ public class DelimitedFileReaderTests
             .AddColumnMap("IsStudent", x => x.IsStudent)
             .AddColumnMap("Id", x => x.Id);
 
-        var fileReader = FileRiftBuilder.BuildDelimitedReader(pathToFile)
+        var fileReader = FileRiftBuilder.Delimited(pathToFile)
             .HasHeaders()
             .WithDelimiter(',')
             .WithDateFormats("MM/dd/yyyy", "yyyy-MM-dd")
-            .WithEscapeCharacter('\"')
-            .WithTrimmedData()
+            .WithQuote('\"')
             .Build(classMap);
-        // var fileReader = new DelimitedFileReader<Person>(pathToFile, true, ',', '\"', classMap, true);
 
         var results = fileReader.Read().ToList();
         Assert.Equal(2, results.Count);
@@ -57,9 +55,9 @@ public class DelimitedFileReaderTests
     {
         var pathToFile = Path.Join(_basePath, "Files", "CsvWithHeader.csv");
         var fileReader = FileRiftBuilder
-            .BuildDelimitedReader(pathToFile)
-            .Defaults
-            .BuildAutoConfiguredReader<Person>();
+            .Delimited(pathToFile)
+            .AutoConfigure()
+            .Build<Person>();
         
         var results = fileReader.Read().ToList();
         Assert.Equal(2, results.Count);
@@ -134,12 +132,10 @@ public class DelimitedFileReaderTests
         classMaps.RegisterClassMap(classMap);
 
         var pathToFile = Path.Join(_basePath, "Files", "CsvWithHeader.csv");
-        var fileReader = FileRiftBuilder.BuildDelimitedReader(pathToFile)
+        var fileReader = FileRiftBuilder.Delimited(pathToFile)
             .HasHeaders()
             .WithDelimiter(',')
-            .WithEscapeCharacter('\"')
-            .WithTrimmedData()
-            .WithNullsInsteadOfBlanks()
+            .WithQuote('\"')
             .Build<Person>();
 
         var results = fileReader.Read().ToList();
@@ -159,11 +155,10 @@ public class DelimitedFileReaderTests
             .AddColumnMap("IsStudent", x => x.IsStudent)
             .AddColumnMap("Id", x => x.Id);
 
-        var fileReader = FileRiftBuilder.BuildDelimitedReader(pathToFile)
+        var fileReader = FileRiftBuilder.Delimited(pathToFile)
             .HasHeaders()
             .WithDateFormats("MM/dd/yyyy", "yyyy-MM-dd")
             .AutoConfigure()
-            .WithTrimmedData()
             .Build(classMap);
         // var fileReader = new DelimitedFileReader<Person>(pathToFile, true, ',', '\"', classMap, true);
 
@@ -195,12 +190,11 @@ public class DelimitedFileReaderTests
             .AddColumnMap("IsStudent", x => x.IsStudent)
             .AddColumnMap("Id", x => x.Id);
 
-        var fileReader = FileRiftBuilder.BuildDelimitedReader(pathToFile)
+        var fileReader = FileRiftBuilder.Delimited(pathToFile)
             .HasHeaders()
             .WithDelimiter(',')
             .WithDateFormats("MM/dd/yyyy", "yyyy-MM-dd")
-            .WithEscapeCharacter('\"')
-            .WithTrimmedData()
+            .WithQuote('\"')
             .Build(classMap);
         // var fileReader = new DelimitedFileReader<Person>(pathToFile, true, ',', '\"', classMap, true);
 
@@ -228,12 +222,11 @@ public class DelimitedFileReaderTests
             .AddColumnMap("IsStudent", x => x.IsStudent)
             .AddColumnMap("Id", x => x.Id);
 
-        var fileReader = FileRiftBuilder.BuildDelimitedReader(pathToFile)
+        var fileReader = FileRiftBuilder.Delimited(pathToFile)
             .HasHeaders()
             .WithDelimiter(',')
             .WithDateFormats("MM/dd/yyyy", "yyyy-MM-dd")
-            .WithEscapeCharacter('\"')
-            .WithTrimmedData()
+            .WithQuote('\"')
             .Build(classMap);
         // var fileReader = new DelimitedFileReader<Person>(pathToFile, true, ',', '\"', classMap, true);
 
