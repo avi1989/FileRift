@@ -77,6 +77,16 @@ public class AutoClassMapTests
         Assert.Equal("FirstName", propName.PropertyName);;
     }
     
+    [Fact]
+    public void GetColumnMapping_Should_ReturnAttributeMapping_OverAutomaticMapping()
+    {
+        var classMap = new AutoClassMap<TestWithAttribute>(true, true);
+
+        var propName = classMap.GetColumnMapping("F_Name");
+        Assert.Equal("F_Name", propName.ColumnName);;
+        Assert.Equal("FirstName", propName.PropertyName);;
+    }
+    
     [Theory]
     [InlineData("First Name")]
     [InlineData("First   Name")]

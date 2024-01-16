@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Linq.Expressions;
 using System.Reflection;
+using FileRift.Attributes;
 using FileRift.Contracts;
 
 namespace FileRift.Mappers;
@@ -29,10 +30,19 @@ public class ClassMap<T> : IClassMap
         foreach (var propertyInfo in properties)
         {
             Properties.Add(propertyInfo.Name, propertyInfo);
+            var columnNameAttribute = propertyInfo.GetCustomAttribute<ColumnNameAttribute>();
+            if (columnNameAttribute != null)
+            {
+                _columnMappings.Add(
+                    new ColumnMapping(
+                        columnNameAttribute.ColumnName,
+                        propertyInfo.Name,
+                        propertyInfo.PropertyType));
+            }
         }
     }
 
-    protected Dictionary<string, PropertyInfo> Properties { get; }
+    protected internal Dictionary<string, PropertyInfo> Properties { get; }
 
     public IReadOnlyCollection<ColumnMapping> SavedColumnMappings
     {
@@ -56,6 +66,20 @@ public class ClassMap<T> : IClassMap
 
     public ClassMap<T> AddColumnMap(string columnName, string propertyName, Type propertyType)
     {
+        var existingColumnMap = _columnMappings.FirstOrDefault(x => x.PropertyName == propertyName);
+        if (existingColumnMap != null)
+        {
+            _columnMappings.Remove(existingColumnMap);
+        }
+
+        existingColumnMap =
+            _columnMappings.FirstOrDefault(x => x.ColumnName == columnName);
+
+        if (existingColumnMap != null)
+        {
+            _columnMappings.Remove(existingColumnMap);
+        }
+        
         var columnMapping = new ColumnMapping(columnName, propertyName, propertyType);
         _columnMappings.Add(columnMapping);
         return this;
