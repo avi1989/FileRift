@@ -38,7 +38,11 @@ public class AutoClassMap<T>(bool ignoreCase, bool ignoreSpecialCharacters)
             var keyWithoutSpecialCharacters =
                 propertyKey.Replace("_", "").Replace(" ", "").Trim();
 
-            if (columnNameWithoutSpecialCharacters == keyWithoutSpecialCharacters)
+            var stringComparison = ignoreCase
+                ? StringComparison.InvariantCultureIgnoreCase
+                : StringComparison.InvariantCulture;
+
+            if (string.Equals(columnNameWithoutSpecialCharacters, keyWithoutSpecialCharacters, stringComparison))
             {
                 var selectedProperty = Properties[propertyKey];
                 this.AddColumnMap(columnName, selectedProperty.Name, selectedProperty.PropertyType);
