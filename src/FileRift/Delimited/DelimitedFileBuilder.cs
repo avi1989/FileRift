@@ -118,6 +118,11 @@ public class DelimitedFileBuilder
             throw new InvalidOperationException("Separator not configured");
         }
 
+        if (!_hasHeaders)
+        {
+            throw new InvalidOperationException("Cannot build a reader without headers");
+        }
+
         return new DelimitedFileReader<T>(
             _filePath,
             _hasHeaders,
