@@ -58,6 +58,16 @@ public class AutoClassMapTests
     }
     
     [Fact]
+    public void GetColumnMapping_Should_ReturnAutoMapping_IgnoringCaseAndUnderscore()
+    {
+        var classMap = new AutoClassMap<Test>(true, true);
+
+        var propName = classMap.GetColumnMapping("FIRST_NAME");
+        Assert.Equal("FIRST_NAME", propName.ColumnName);;
+        Assert.Equal("FirstName", propName.PropertyName);;
+    }
+    
+    [Fact]
     public void GetColumnMapping_Should_ReturnAutoMapping_IgnoringUnderscoreOnPropertyName()
     {
         var classMap = new AutoClassMap<Test>(true, true);
