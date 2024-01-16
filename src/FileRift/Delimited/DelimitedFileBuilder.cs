@@ -134,6 +134,27 @@ public class DelimitedFileBuilder
             _shouldIgnoreErrors,
             _allowedDateFormats);
     }
+    
+    public DelimitedFileReader<T> Build<T>(OrdinalClassMap<T> classMap) where T : class, new()
+    {
+        ArgumentNullException.ThrowIfNull(classMap);
+
+        if (_delimiter == null)
+        {
+            throw new InvalidOperationException("Separator not configured");
+        }
+
+        return new DelimitedFileReader<T>(
+            _filePath,
+            _hasHeaders,
+            _delimiter.Value,
+            _quoteField,
+            classMap,
+            true,
+            true,
+            _shouldIgnoreErrors,
+            _allowedDateFormats);
+    }
 
     public DelimitedFileReader<T> Build<T>() where T : class, new()
     {

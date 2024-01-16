@@ -11,7 +11,7 @@ public class DelimitedFileReader<T> : TypedFileReader<T> where T : class, new()
         bool hasHeader,
         char delimiter,
         char? escapeCharacter,
-        ClassMap<T> map,
+        IClassMap<T> map,
         bool shouldAutoTrim = false,
         bool shouldConvertWhitespaceToNulls = false,
         bool shouldIgnoreErrors = false,
@@ -31,7 +31,7 @@ public class DelimitedFileReader<T> : TypedFileReader<T> where T : class, new()
 
     internal DelimitedFileReader(
         IFileRiftDataReader reader,
-        ClassMap<T> map,
+        IClassMap<T> map,
         bool shouldIgnoreErrors = false) : base(reader, map, shouldIgnoreErrors)
     {
     }

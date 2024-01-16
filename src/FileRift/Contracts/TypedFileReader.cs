@@ -7,7 +7,7 @@ namespace FileRift.Contracts;
 
 public class TypedFileReader<T>(
     IFileRiftDataReader reader,
-    ClassMap<T> map,
+    IClassMap<T> map,
     bool ignoreErrors = false)
     where T : class, new()
 {
@@ -15,7 +15,7 @@ public class TypedFileReader<T>(
 
     private readonly List<ReadError> _errors = new();
 
-    private CultureInfo _provider = CultureInfo.InvariantCulture;
+    private bool _isOrdinalClassMap = map is OrdinalClassMap<T>;
 
     public IFileRiftDataReader DataReader => reader;
 
@@ -153,13 +153,40 @@ public class TypedFileReader<T>(
 
     public IEnumerable<T> Read()
     {
+        if (_isOrdinalClassMap)
+        {
+            return this.ReadByOrdinal();
+        }
+
+        return this.ReadByColumnName();
+    }
+
+    public IEnumerable<T> ReadByOrdinal()
+    {
+        var ordinalMap = (OrdinalClassMap<T>) map;
+        while (reader.Read())
+        {
+            T res = new T();
+            foreach (var ordinalMapItem in ordinalMap.ColumnMappings)
+            {
+                var value = this.GetValue(ordinalMapItem);
+                _propertySetter.SetValue(res, ordinalMapItem.PropertyName, value);
+            }
+            
+            yield return res;
+        }
+    }
+    
+    public IEnumerable<T> ReadByColumnName()
+    {
+        var columnNameMap = (ClassMap<T>)map;
         while (reader.Read())
         {
             T res = new T();
             var headers = reader.Headers!.ToList();
             foreach (var header in headers)
             {
-                var column = map.GetColumnMapping(header!);
+                var column = columnNameMap.GetColumnMapping(header!);
                 if (column == null)
                 {
                     continue;
@@ -186,7 +213,7 @@ public class TypedFileReader<T>(
             yield return res;
         }
     }
-
+    
     private object? GetValue(int ordinal, ColumnMapping item)
     {
         object? typedValue;
@@ -209,4 +236,28 @@ public class TypedFileReader<T>(
 
         return typedValue;
     }
+    
+    private object? GetValue(OrdinalColumnMapping item)
+    {
+        object? typedValue;
+        var type = item.DataType;
+        var underlyingType = Nullable.GetUnderlyingType(type);
+
+        if (underlyingType != null)
+        {
+            type = underlyingType;
+        }
+
+        if (DataTypeReaders.TryGetValue(type, out var readerFunc))
+        {
+            typedValue = readerFunc(item.ColumnIndex);
+        }
+        else
+        {
+            throw new InvalidOperationException($"Mapper not found for type {type.FullName}");
+        }
+
+        return typedValue;
+    }
+    
 }

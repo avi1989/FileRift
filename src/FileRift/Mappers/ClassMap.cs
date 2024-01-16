@@ -6,7 +6,7 @@ using FileRift.Contracts;
 
 namespace FileRift.Mappers;
 
-public class ClassMap<T> : IClassMap
+public class ClassMap<T> : IClassMap<T>
 {
     private ColumnMappings _columnMappings;
 
@@ -54,8 +54,8 @@ public class ClassMap<T> : IClassMap
 
     public ClassMap<T> AddColumnMap(string columnName, Expression<Func<T, object?>> expression)
     {
-        var propertyName = GetPropertyName(expression);
-        var propertyType = GetPropertyType(expression);
+        var propertyName = this.GetPropertyName(expression);
+        var propertyType = this.GetPropertyType(expression);
         return AddColumnMap(columnName, propertyName, propertyType);
     }
 
@@ -79,7 +79,7 @@ public class ClassMap<T> : IClassMap
         {
             _columnMappings.Remove(existingColumnMap);
         }
-        
+
         var columnMapping = new ColumnMapping(columnName, propertyName, propertyType);
         _columnMappings.Add(columnMapping);
         return this;
@@ -90,35 +90,25 @@ public class ClassMap<T> : IClassMap
         _columnMappings.TryGetValue(columnName, out var columnMapping);
         return columnMapping;
     }
-
-    private Type GetPropertyType(Expression<Func<T, object?>> expression)
+    
+    public virtual ColumnMapping? GetColumnMapping(Expression<Func<T, object?>> expression)
     {
-        var propertyName = GetPropertyName(expression);
-        var propertyInfo = Properties[propertyName];
-        Debug.Assert(propertyInfo?.PropertyType?.FullName != null, "propertyInfo != null");
-
-        return propertyInfo.PropertyType;
+        var propertyName = this.GetPropertyName(expression);
+        _columnMappings.TryGetValue(propertyName, out var columnMapping);
+        return columnMapping;
     }
 
-    private static string GetPropertyName(Expression<Func<T, object?>> expression)
+    public Type GetPropertyType<T1>(Expression<Func<T1, object?>> expression)
     {
-        MemberExpression memberExpression;
-        if (expression.Body.NodeType == ExpressionType.Convert)
-        {
-            var unaryExpression = (UnaryExpression)expression.Body;
-            memberExpression = (MemberExpression)unaryExpression.Operand;
-        }
-        else
-        {
-            memberExpression = (MemberExpression)expression.Body;
-        }
+        var propertyName = this.GetPropertyName(expression);
+        var property = this.Properties[propertyName];
+        return property.PropertyType;
+    }
 
-        if (memberExpression.Expression?.NodeType == ExpressionType.MemberAccess)
-        {
-            throw new ArgumentException(
-                "The provided expression is a nested member access expression which is not allowed.");
-        }
-
-        return memberExpression.Member.Name;
+    
+    public string GetPropertyName<T>(Expression<Func<T, object?>> expression)
+    {
+        var member = IClassMap.GetProperty(expression);
+        return member.Name;
     }
 }
